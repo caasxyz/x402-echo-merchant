@@ -21,6 +21,7 @@ import {
 import { useFacilitator } from "x402/verify";
 import { Network } from 'x402-next';
 import { facilitator } from "@coinbase/x402";
+import { refund } from "./refund";
 
 const mainnetConfig = {
   price: '$0.01',
@@ -259,7 +260,7 @@ export function paymentMiddleware(
     }
 
     const verification = await verify(decodedPayment, selectedPaymentRequirements);
-
+    
     if (!verification.isValid) {
       return new NextResponse(
         JSON.stringify({
@@ -280,6 +281,12 @@ export function paymentMiddleware(
       const settlement = await settle(decodedPayment, selectedPaymentRequirements);
 
       if (settlement.success) {
+        // refund the payment
+        const refundResult = await refund(
+          decodedPayment.payload.authorization.from,
+          selectedPaymentRequirements
+        );
+
         response.headers.set(
           "X-PAYMENT-RESPONSE",
           JSON.stringify({
@@ -287,10 +294,13 @@ export function paymentMiddleware(
             transaction: settlement.transaction,
             network: settlement.network,
             payer: settlement.payer,
+            refundResult: refundResult,
           }),
         );
       }
     } catch (error) {
+      console.error("error", error);
+
       return new NextResponse(
         JSON.stringify({
           x402Version,

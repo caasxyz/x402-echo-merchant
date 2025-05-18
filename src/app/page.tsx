@@ -3,17 +3,19 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Copy, ExternalLink, Github, Heart } from 'lucide-react';
+import { Copy, ExternalLink, Github, Heart, Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const ENDPOINTS = [
   {
     label: 'Base Mainnet',
-    url: 'https://x402.payai.network/api/base/paid-content',
+    url: `${API_URL}/api/base/paid-content`,
   },
   {
     label: 'Base Sepolia',
-    url: 'https://x402.payai.network/api/base-sepolia/paid-content',
+    url: `${API_URL}/api/base-sepolia/paid-content`,
   },
 ];
 
@@ -44,7 +46,7 @@ const fetchWithPay = wrapFetchWithPayment(fetch, client);
 
 // Make a request that may require payment
 const response = await fetchWithPay(
-  "https://x402.payai.network/api/base/paid-content",
+  "${API_URL}/api/base/paid-content",
   {
     method: "GET",
   }
@@ -73,7 +75,7 @@ const fetchWithPay = wrapFetchWithPayment(fetch, client);
 
 // Make a request that may require payment
 const response = await fetchWithPay(
-  "https://x402.payai.network/api/base-sepolia/paid-content",
+  "${API_URL}/api/base-sepolia/paid-content",
   {
     method: "GET",
   }
@@ -108,7 +110,7 @@ const client = createWalletClient({
 // Create an Axios instance with payment handling
 const api = withPaymentInterceptor(
   axios.create({
-    baseURL: "https://x402.payai.network",
+    baseURL: "${API_URL}",
   }),
   client
 );
@@ -137,7 +139,7 @@ const client = createWalletClient({
 // Create an Axios instance with payment handling
 const api = withPaymentInterceptor(
   axios.create({
-    baseURL: "https://x402.payai.network",
+    baseURL: "${API_URL}",
   }),
   client
 );
@@ -171,8 +173,8 @@ const RESOURCES = [
 function CodeBlock({ code, lang }: { code: string; lang?: string }) {
   const [copied, setCopied] = React.useState(false);
   return (
-    <div className="relative bg-gray-100 rounded-md p-4 mb-6 overflow-x-auto group">
-      <pre className="text-sm leading-relaxed font-mono text-gray-800" style={{ fontFamily: 'Menlo, monospace' }}>
+    <div className="relative bg-gray-100 dark:bg-card rounded-md p-4 mb-6 overflow-x-auto group">
+      <pre className="text-sm leading-relaxed font-mono text-gray-800 dark:text-gray-100" style={{ fontFamily: 'Menlo, monospace' }}>
         <code>{code}</code>
       </pre>
       <Button
@@ -196,14 +198,42 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
   );
 }
 
+function useThemeToggle() {
+  const [isDark, setIsDark] = React.useState(() =>
+    typeof window !== 'undefined' ? document.documentElement.classList.contains('dark') : false
+  );
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
+  return [isDark, setIsDark] as const;
+}
+
 export default function Home() {
+  const [isDark, setIsDark] = useThemeToggle();
   return (
-    <main className="min-h-screen bg-white text-gray-900 flex flex-col items-center px-4">
+    <main className="min-h-screen bg-white dark:bg-background text-gray-900 dark:text-foreground flex flex-col items-center px-4">
+      {/* Theme Toggle Button */}
+      <div className="w-full max-w-2xl flex justify-end pt-6">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          onClick={() => setIsDark((d) => !d)}
+        >
+          {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </Button>
+      </div>
       {/* Hero Section */}
       <section className="w-full max-w-2xl mx-auto py-16 flex flex-col items-center text-center">
         <h1 className="text-4xl sm:text-5xl font-semibold mb-4 tracking-tight">x402 Echo Server</h1>
         <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-xl">
           Instantly test the <a href="https://x402.org" target="_blank" rel="noopener noreferrer" className="text-indigo-600 font-medium">x402 protocol</a> for pay-per-use APIs.<br />
+          Perfect for agentic and micro transactions.<br /><br />
           Live endpoints. Real payments. <span className="text-green-600">100% refunds.</span>
         </p>
         <Card className="w-full bg-gray-50 border border-gray-200 shadow-none mb-4">

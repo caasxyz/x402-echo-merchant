@@ -5,24 +5,22 @@ import { toJsonSafe } from "x402/shared";
 export async function POST(request: NextRequest) {
   const { paymentPayload, paymentRequirements } = await request.json();
 
-  // create the facilitator based on the network used
-  let facilitatorConfig;
-  if (paymentRequirements.network === "base-sepolia") {
-    facilitatorConfig = {
-      url: "https://x402.org/facilitator" as `https://${string}`,
-    } as const;
+  // get the url and headers for the facilitator
+  let url;
+  let headers;
+  const isTestnet = paymentRequirements.network === "base-sepolia";
+  if (isTestnet) {
+    url = "https://x402.org/facilitator";
+    headers = {};
   } else {
-    facilitatorConfig = facilitator;
+    url = facilitator.url;
+    if (facilitator.createAuthHeaders) {
+      headers = (await facilitator.createAuthHeaders()).settle;
+    } else { headers = {}; }
   }
 
-  // get the url and headers for the facilitator
-  const url = facilitator?.url || "https://x402.org/facilitator";
-  const headers = facilitator?.createAuthHeaders
-    ? (await facilitator.createAuthHeaders()).settle
-    : {};
-
   // set the content type to json -- this should be fixed in the x402 library
-  headers["Content-Type"] ="application/json";
+  headers["Content-Type"] = "application/json";
   
   // make the request to the facilitator
   const res = await fetch(`${url}/settle`, {

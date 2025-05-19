@@ -1,10 +1,9 @@
 'use client';
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Copy, ExternalLink, Github, Heart, Moon, Sun } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -176,7 +175,7 @@ const RESOURCES = [
   },
 ];
 
-function CodeBlock({ code, lang }: { code: string; lang?: string }) {
+function CodeBlock({ code }: { code: string; lang?: string }) {
   const [copied, setCopied] = React.useState(false);
   return (
     <div className="relative bg-gray-100 dark:bg-card rounded-md p-4 mb-6 overflow-x-auto group">

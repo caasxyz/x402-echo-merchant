@@ -5,7 +5,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function renderRizzlerHtml(paymentResponse: any, refundResult: any) {
+export function renderRizzlerHtml(
+  paymentResponse: { transaction: string, network: string, payer: string },
+  refundResult: `0x${string}`
+) {
   const paymentTx = paymentResponse.transaction || 'N/A';
   const refundTx = refundResult || 'N/A';
 

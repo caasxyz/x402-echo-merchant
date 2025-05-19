@@ -18,7 +18,6 @@ import {
   Resource,
   RoutesConfig,
 } from "x402/types";
-import { useFacilitator } from "x402/verify";
 import { Network } from 'x402-next';
 import { facilitator } from "@coinbase/x402";
 import { refund } from "./refund";
@@ -138,7 +137,6 @@ export function paymentMiddleware(
   routes: RoutesConfig,
   facilitator?: FacilitatorConfig,
 ) {
-  const { verify, settle } = useFacilitator(facilitator);
   const x402Version = 1;
 
   // Pre-compile route patterns to regex and extract verbs

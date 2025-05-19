@@ -14,13 +14,11 @@ export const GET = async (request: NextRequest) => {
   try {
     paymentInfo = JSON.parse(paymentResponseHeader);
   } catch (e) {
+    console.error("Invalid payment info json.", e);
     return NextResponse.json({
-      error: 'Invalid payment info format.'
+      error: 'Invalid payment info json.'
     }, { status: 500 });
   }
 
-  return NextResponse.json({
-    gifUrl: '/rizzler.gif',
-    payment: paymentInfo
-  });
+  return NextResponse.json(paymentInfo);
 };

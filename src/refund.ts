@@ -23,13 +23,13 @@ const getSigner = (network: Network) => {
     if (network === "base-sepolia") {
         return createWalletClient({
             chain: baseSepolia,
-            transport: http(),
+            transport: http(process.env.BASE_SEPOLIA_RPC_URL),
             account: account,
         });
     } else if (network === "base") {
         return createWalletClient({
             chain: base,
-            transport: http(),
+            transport: http(process.env.BASE_RPC_URL),
             account: privateKey,
         });
     } else {
@@ -46,12 +46,12 @@ const getPublicClient = (network: Network) => {
     if (network === "base-sepolia") {
         return createPublicClient({
             chain: baseSepolia,
-            transport: http(),
+            transport: http(process.env.BASE_SEPOLIA_RPC_URL),
         });
     } else if (network === "base") {
         return createPublicClient({
             chain: base,
-            transport: http(),
+            transport: http(process.env.BASE_RPC_URL),
         });
     } else {
         throw new Error("Unsupported network");

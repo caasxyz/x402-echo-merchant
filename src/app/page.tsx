@@ -45,6 +45,7 @@ const client = createWalletClient({
 const fetchWithPay = wrapFetchWithPayment(fetch, client);
 
 // Make a request that may require payment
+console.log("making request + payment");
 const response = await fetchWithPay(
   "${API_URL}/api/base/paid-content",
   {
@@ -52,7 +53,8 @@ const response = await fetchWithPay(
   }
 );
 
-const data = await response.json();`,
+const data = await response.text();
+console.log(data);`,
       lang: 'typescript',
     },
     {
@@ -74,6 +76,7 @@ const client = createWalletClient({
 const fetchWithPay = wrapFetchWithPayment(fetch, client);
 
 // Make a request that may require payment
+console.log("making request + payment");
 const response = await fetchWithPay(
   "${API_URL}/api/base-sepolia/paid-content",
   {
@@ -81,7 +84,8 @@ const response = await fetchWithPay(
   }
 );
 
-const data = await response.json();`,
+const data = await response.text();
+console.log(data);`,
       lang: 'typescript',
     },
   ],
@@ -116,6 +120,7 @@ const api = withPaymentInterceptor(
 );
 
 // Make a request that may require payment
+console.log("making request + payment");
 const response = await api.get("/api/base/paid-content");
 console.log(response.data);`,
       lang: 'typescript',
@@ -145,6 +150,7 @@ const api = withPaymentInterceptor(
 );
 
 // Make a request that may require payment
+console.log("making request + payment");
 const response = await api.get("/api/base-sepolia/paid-content");
 console.log(response.data);`,
       lang: 'typescript',
@@ -234,7 +240,7 @@ export default function Home() {
         <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-xl">
           Instantly test the <a href="https://x402.org" target="_blank" rel="noopener noreferrer" className="text-indigo-600 font-medium">x402 protocol</a> for pay-per-use APIs.<br />
           Perfect for agentic and micro transactions.<br /><br />
-          Live endpoints. Real payments. <span className="text-green-600">100% refunds.</span>
+          Live endpoints. Real payments. <span className="text-green-600">100% free.</span>
         </p>
         <Card className="w-full bg-gray-50 border border-gray-200 shadow-none mb-4">
           <CardContent className="py-6 flex flex-col gap-4">
@@ -242,14 +248,17 @@ export default function Home() {
             {ENDPOINTS.map((ep) => (
               <div key={ep.label} className="flex items-center justify-between bg-white rounded-md px-4 py-3 border border-gray-100 mb-2">
                 <span className="font-mono text-sm text-gray-900">{ep.label}</span>
-                <a
-                  href={ep.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-indigo-600 underline hover:text-indigo-800 text-sm font-medium flex items-center gap-1"
-                >
-                  {ep.url} <ExternalLink className="w-4 h-4" />
-                </a>
+                <div className="flex items-center gap-1">
+                  <a
+                    href={ep.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 underline hover:text-indigo-800 text-sm font-medium flex items-center gap-1"
+                  >
+                    {ep.url} <ExternalLink className="w-4 h-4" />
+                  </a>
+                  <CopyButton url={ep.url} />
+                </div>
               </div>
             ))}
           </CardContent>
@@ -315,5 +324,28 @@ export default function Home() {
         </span>
       </footer>
     </main>
+  );
+}
+
+function CopyButton({ url }: { url: string }) {
+  const [copied, setCopied] = React.useState(false);
+  return (
+    <Button
+      size="icon"
+      variant="ghost"
+      className="ml-1 opacity-70 hover:opacity-100"
+      onClick={async () => {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+      }}
+      aria-label="Copy URL"
+    >
+      <Copy className="w-4 h-4" />
+      <span className="sr-only">Copy URL</span>
+      {copied && (
+        <span className="absolute top-0 right-10 text-xs text-indigo-600 font-semibold bg-white px-2 py-1 rounded shadow">Copied!</span>
+      )}
+    </Button>
   );
 }

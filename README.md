@@ -6,7 +6,7 @@ A modern, developer-focused pay-per-use API demo server for the [x402 protocol](
 
 ## Demo
 
-https://x402.payai.network/
+[https://x402.payai.network/](https://x402.payai.network)
 
 ---
 
@@ -60,9 +60,11 @@ https://x402.payai.network/
 
 ## Environment Variables
 
-- `ADDRESS` — The pay-to address for x402 payments
-- `BASE_PRIVATE_KEY` — Private key for refunding payments (test key for demo only)
-- (Other x402/facilitator config as needed)
+- `NEXT_PUBLIC_API_URL` - The URL of the server
+- `CDP_API_KEY_ID` - Coinbase Developer Platform Key
+- `CDP_API_KEY_SECRET` - Coinbase Developer Platform Key Secret
+- `RECEIVE_PAYMENTS_ADDRESS` - Address to receive payments to
+- `BASE_PRIVATE_KEY` - Private key of address to refund payments from
 
 ---
 

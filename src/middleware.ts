@@ -48,7 +48,7 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/base/')) {
     return paymentMiddleware(
       // payTo
-      process.env.ADDRESS as `0x${string}`,
+      process.env.RECEIVE_PAYMENTS_ADDRESS as `0x${string}`,
       // routes
       {
         '/api/base/paid-content': mainnetConfig
@@ -61,7 +61,7 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/base-sepolia/')) {
     return paymentMiddleware(
       // payTo
-      process.env.ADDRESS as `0x${string}`,
+      process.env.RECEIVE_PAYMENTS_ADDRESS as `0x${string}`,
       // routes
       { '/api/base-sepolia/paid-content': sepoliaConfig },
       // facilitator

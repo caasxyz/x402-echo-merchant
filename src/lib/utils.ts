@@ -40,7 +40,7 @@ export function renderRizzlerHtml(
     .gif { display: block; margin: 0 auto 2.5rem auto; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); width: 256px; height: auto; }
     .section { margin-bottom: 2.5rem; }
     .label { font-size: 1.1rem; font-weight: 500; color: #444; margin-bottom: 0.3rem; }
-    .tx { font-family: Menlo, monospace; color: #4f46e5; font-size: 1rem; margin-bottom: 1.2rem; }
+    .tx { font-family: Menlo, monospace; color: #4f46e5; font-size: 1rem; margin-bottom: 1.2rem; word-break: break-all; overflow-wrap: anywhere; }
     .refund { color: #ec4899; }
     .code-title { font-weight: 600; color: #444; margin-bottom: 0.5rem; }
     .code-block { background: #f3f4f6; border-radius: 8px; padding: 1rem; font-family: Menlo, monospace; font-size: 0.95rem; color: #222; overflow-x: auto; margin-bottom: 2.5rem; }

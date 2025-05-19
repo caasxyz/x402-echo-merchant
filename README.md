@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# x402 Echo Server
 
-## Getting Started
+A modern, developer-focused pay-per-use API demo server for the [x402 protocol](https://x402.org). Instantly test x402 payments, see live paywall enforcement, and get a rizzler GIF reward after payment—plus a full refund!
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Demo
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+https://x402.payai.network/
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Features
 
-## Learn More
+- **Pay-per-use API endpoints** on Base Mainnet and Base Sepolia
+- **x402 paywall middleware**: Enforces payment before serving protected content
+- **Rizzler GIF reward**: After payment, receive a fun GIF and full transaction/refund details
+- **100% refunds**: All payments are instantly refunded for demo/testing
+- **Modern UI**: Built with Next.js, TailwindCSS, and shadcn/ui
+- **Edge-compatible**: Middleware works on Vercel/Edge, with Node.js logic offloaded to API routes
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How It Works
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Request a paid endpoint** (e.g. `/api/base/paid-content`)
+2. **x402 middleware** checks for payment and enforces the paywall
+3. **After payment**:
+   - Middleware verifies and settles the payment
+   - Instantly refunds the payment
+   - Returns a custom HTML page with:
+     - "Thank you for your payment! Have some rizz!"
+     - The rizzler
+     - Payment and refund transaction links
+     - The full payment response as a code snippet
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Local Development
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Install dependencies:**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+
+2. **Set up environment variables:**
+   - Copy `.env.example` to `.env` and fill in required values (see below)
+
+3. **Run the dev server:**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+   - The app will be available at [http://localhost:3000](http://localhost:3000)
+
+---
+
+## Environment Variables
+
+- `ADDRESS` — The pay-to address for x402 payments
+- `BASE_PRIVATE_KEY` — Private key for refunding payments (test key for demo only)
+- (Other x402/facilitator config as needed)
+
+---
+
+## Deployment
+
+- Deploy to Vercel, your own Node.js server, or any platform supporting Next.js
+- For Edge compatibility, all Node.js-only logic is handled in API routes, including:
+---- authenticating with @coinbase/cdp-sdk which relies on the NodeJS crypto library
+
+---
+
+## License
+
+Apache V2

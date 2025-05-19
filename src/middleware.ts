@@ -261,17 +261,12 @@ export function paymentMiddleware(
     }
 
     // Verify payment via API route
-    console.log("Inside middleware");
-    console.dir(decodedPayment, { depth: null });
-    console.dir(selectedPaymentRequirements, { depth: null });
-
     const verifyRes = await fetch(`${request.nextUrl.origin}/api/facilitator/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         paymentPayload: decodedPayment,
         paymentRequirements: selectedPaymentRequirements,
-        facilitatorConfig: facilitator,
       }),
     });
     const verification = await verifyRes.json();

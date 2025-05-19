@@ -260,7 +260,21 @@ export function paymentMiddleware(
       );
     }
 
-    const verification = await verify(decodedPayment, selectedPaymentRequirements);
+    // Verify payment via API route
+    console.log("Inside middleware");
+    console.dir(decodedPayment, { depth: null });
+    console.dir(selectedPaymentRequirements, { depth: null });
+
+    const verifyRes = await fetch(`${request.nextUrl.origin}/api/facilitator/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        paymentPayload: decodedPayment,
+        paymentRequirements: selectedPaymentRequirements,
+        facilitatorConfig: facilitator,
+      }),
+    });
+    const verification = await verifyRes.json();
     
     if (!verification.isValid) {
       return new NextResponse(
@@ -277,9 +291,18 @@ export function paymentMiddleware(
     // Proceed with request
     const response = await NextResponse.next();
 
-    // Settle payment after response
+    // Settle payment after response via API route
     try {
-      const settlement = await settle(decodedPayment, selectedPaymentRequirements);
+      const settleRes = await fetch(`${request.nextUrl.origin}/api/facilitator/settle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentPayload: decodedPayment,
+          paymentRequirements: selectedPaymentRequirements,
+          facilitatorConfig: facilitator,
+        }),
+      });
+      const settlement = await settleRes.json();
 
       if (settlement.success) {
         // refund the payment

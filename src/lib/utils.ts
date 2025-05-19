@@ -26,13 +26,14 @@ export function renderRizzlerHtml(paymentResponse: any, refundResult: any) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Enjoy the rizz</title>
+  <title>Have some rizz!</title>
   <link rel="icon" href="/favicon.ico" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; background: #fff; color: #222; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 0 auto; padding: 0 10%; }
-    .header { font-size: 2.2rem; font-weight: 600; margin-top: 3rem; margin-bottom: 2rem; letter-spacing: -1px; text-align: center; }
+    .top-header { font-size: 1.3rem; font-weight: 600; margin-top: 2.5rem; margin-bottom: 1.5rem; letter-spacing: -0.5px; text-align: center; color: #4f46e5; }
+    .header { font-size: 2.2rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 2rem; letter-spacing: -1px; text-align: center; }
     .gif { display: block; margin: 0 auto 2.5rem auto; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); width: 256px; height: auto; }
     .section { margin-bottom: 2.5rem; }
     .label { font-size: 1.1rem; font-weight: 500; color: #444; margin-bottom: 0.3rem; }
@@ -51,7 +52,8 @@ export function renderRizzlerHtml(paymentResponse: any, refundResult: any) {
 </head>
 <body>
   <div class="container">
-    <div class="header">Enjoy the rizz</div>
+    <div class="top-header">Thank you for your payment!</div>
+    <div class="header">Have some rizz</div>
     <img src="/rizzler.gif" alt="rizzler gif" class="gif" />
     <div class="section"></div>
     <div class="section">
@@ -62,7 +64,7 @@ export function renderRizzlerHtml(paymentResponse: any, refundResult: any) {
     </div>
     <div class="section"></div>
     <div class="section">
-      <div class="code-title">X-PAYMENT-RESPONSE</div>
+      <div class="code-title">X-PAYMENT-RESPONS HEADER</div>
       <div class="code-block"><pre><code>${paymentResponseJson}</code></pre></div>
     </div>
     <a href="/" class="back-link">Back to Home</a>

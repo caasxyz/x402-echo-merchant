@@ -67,7 +67,7 @@ export function renderRizzlerHtml(
     </div>
     <div class="section"></div>
     <div class="section">
-      <div class="code-title">X-PAYMENT-RESPONS HEADER</div>
+      <div class="code-title">X-PAYMENT-RESPONSE HEADER</div>
       <div class="code-block"><pre><code>${paymentResponseJson}</code></pre></div>
     </div>
     <a href="/" class="back-link">Back to Home</a>

@@ -1,4 +1,4 @@
-# x402 Echo Server
+# x402 Echo Merchant Server
 
 A modern, developer-focused pay-per-use API demo server for the [x402 protocol](https://x402.org). Instantly test x402 payments, see live paywall enforcement, and get a rizzler GIF reward after payment—plus a full refund!
 

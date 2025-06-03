@@ -169,7 +169,7 @@ const RESOURCES = [
     icon: <Github className="w-4 h-4 text-indigo-600" />,
   },
   {
-    label: 'x402 Echo Server Github',
+    label: 'x402 Echo Merchant Github',
     url: 'https://github.com/notorious-d-e-v/x402-echo-server',
     icon: <Github className="w-4 h-4 text-indigo-600" />,
   },
@@ -235,7 +235,7 @@ export default function Home() {
       </div>
       {/* Hero Section */}
       <section className="w-full max-w-2xl mx-auto py-16 flex flex-col items-center text-center">
-        <h1 className="text-4xl sm:text-5xl font-semibold mb-4 tracking-tight">x402 Echo Server</h1>
+        <h1 className="text-4xl sm:text-5xl font-semibold mb-4 tracking-tight">x402 Echo Merchant</h1>
         <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-xl">
           Instantly test the <a href="https://x402.org" target="_blank" rel="noopener noreferrer" className="text-indigo-600 font-medium">x402 protocol</a> for pay-per-use APIs.<br />
           Perfect for agentic and micro transactions.<br /><br />

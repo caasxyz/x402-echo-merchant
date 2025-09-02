@@ -16,12 +16,14 @@ import {
   PaymentPayload,
   PaymentRequirements,
   Resource,
+  RouteConfig,
   RoutesConfig,
 } from "x402/types";
 import { Network } from 'x402-next';
-import { facilitator } from "@coinbase/x402";
 import { refund } from "./refund";
 import { renderRizzlerHtml } from "./lib/utils";
+
+const facilitatorUrl = process.env.FACILITATOR_URL as `${string}://${string}`;
 
 const mainnetConfig = {
   price: '$0.01',
@@ -29,7 +31,7 @@ const mainnetConfig = {
   config: {
     description: 'Access to protected content on base mainnet'
   }
-};
+} as RouteConfig;
 
 const sepoliaConfig = {
   price: '$0.01',
@@ -37,7 +39,39 @@ const sepoliaConfig = {
   config: {
     description: 'Access to protected content on base-sepolia'
   }
-};
+} as RouteConfig;
+
+const avalancheConfig = {
+  price: '$0.01',
+  network: 'avalanche' as Network,
+  config: {
+    description: 'Access to protected content on avalanche mainnet'
+  }
+} as RouteConfig;
+
+const avalancheFujiConfig = {
+  price: '$0.01',
+  network: 'avalanche-fuji' as Network,
+  config: {
+    description: 'Access to protected content on avalanche-fuji'
+  }
+} as RouteConfig;
+
+const seiConfig = {
+  price: '$0.01',
+  network: 'sei' as Network,
+  config: {
+    description: 'Access to protected content on sei mainnet'
+  }
+} as RouteConfig;
+
+const seiTestnetConfig = {
+  price: '$0.01',
+  network: 'sei-testnet' as Network,
+  config: {
+    description: 'Access to protected content on sei-testnet'
+  }
+} as RouteConfig;
 
 // middleware uses a payment config that is conditional
 // based on which chain the client wants to transact on
@@ -53,7 +87,9 @@ export function middleware(request: NextRequest) {
       {
         '/api/base/paid-content': mainnetConfig
       },
-      facilitator
+      {
+        url: facilitatorUrl,
+      }
     )(request);
   }
   
@@ -66,7 +102,51 @@ export function middleware(request: NextRequest) {
       { '/api/base-sepolia/paid-content': sepoliaConfig },
       // facilitator
       {
-        url: "https://x402.org/facilitator",
+        url: facilitatorUrl,
+      }
+    )(request);
+  }
+  
+  // avalanche mainnet
+  if (pathname.startsWith('/api/avalanche/')) {
+    return paymentMiddleware(
+      process.env.RECEIVE_PAYMENTS_ADDRESS as `0x${string}`,
+      { '/api/avalanche/paid-content': avalancheConfig },
+      {
+        url: facilitatorUrl,
+      }
+    )(request);
+  }
+
+  // avalanche-fuji (testnet)
+  if (pathname.startsWith('/api/avalanche-fuji/')) {
+    return paymentMiddleware(
+      process.env.RECEIVE_PAYMENTS_ADDRESS as `0x${string}`,
+      { '/api/avalanche-fuji/paid-content': avalancheFujiConfig },
+      {
+        url: facilitatorUrl,
+      }
+    )(request);
+  }
+
+  // sei mainnet
+  if (pathname.startsWith('/api/sei/')) {
+    return paymentMiddleware(
+      process.env.RECEIVE_PAYMENTS_ADDRESS as `0x${string}`,
+      { '/api/sei/paid-content': seiConfig },
+      {
+        url: facilitatorUrl,
+      }
+    )(request);
+  }
+
+  // sei-testnet
+  if (pathname.startsWith('/api/sei-testnet/')) {
+    return paymentMiddleware(
+      process.env.RECEIVE_PAYMENTS_ADDRESS as `0x${string}`,
+      { '/api/sei-testnet/paid-content': seiTestnetConfig },
+      {
+        url: facilitatorUrl,
       }
     )(request);
   }
@@ -344,5 +424,9 @@ export const config = {
   matcher: [
     '/api/base/paid-content/:path*',
     '/api/base-sepolia/paid-content/:path*',
+    '/api/avalanche/paid-content/:path*',
+    '/api/avalanche-fuji/paid-content/:path*',
+    '/api/sei/paid-content/:path*',
+    '/api/sei-testnet/paid-content/:path*',
   ]
 };

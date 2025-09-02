@@ -16,6 +16,22 @@ const ENDPOINTS = [
     label: 'Base Sepolia',
     url: `${API_URL}/api/base-sepolia/paid-content`,
   },
+  {
+    label: 'Avalanche Mainnet',
+    url: `${API_URL}/api/avalanche/paid-content`,
+  },
+  {
+    label: 'Avalanche Fuji Testnet',
+    url: `${API_URL}/api/avalanche-fuji/paid-content`,
+  },
+  {
+    label: 'Sei Mainnet',
+    url: `${API_URL}/api/sei/paid-content`,
+  },
+  {
+    label: 'Sei Testnet',
+    url: `${API_URL}/api/sei-testnet/paid-content`,
+  },  
 ];
 
 const QUICKSTART = {

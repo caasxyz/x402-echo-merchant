@@ -21,7 +21,8 @@
     "react-dom": "^19.0.0",
     "react-syntax-highlighter": "^15.6.1",
     "tailwind-merge": "^3.3.0",
-    "x402-next": "^0.3.4"
+    "x402": "^0.5.3",
+    "x402-next": "^0.5.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

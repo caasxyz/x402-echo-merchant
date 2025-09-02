@@ -6,7 +6,7 @@ import {
     publicActions,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { avalanche, iotex } from 'viem/chains';
+import { avalanche, avalancheFuji, base, baseSepolia, iotex, sei, seiTestnet } from 'viem/chains';
 import { Network } from 'x402-next';
 import { PaymentRequirements, evm } from 'x402/types';
 
@@ -22,19 +22,57 @@ const { createSigner } = evm;
  * @returns The signer
  */
 const getSigner = (network: Network) => {
-    // TODO replace this once PR gets merged to support avalanche
     if (network === "avalanche") {
         return createWalletClient({
           chain: avalanche,
-          transport: http(),
+          transport: http(process.env.AVALANCHE_RPC_URL as `https://${string}`),
           account,
-        }).extend(publicActions);    }
+        }).extend(publicActions);
+    }
+    else if (network === "avalanche-fuji") {
+        return createWalletClient({
+          chain: avalancheFuji,
+          transport: http(process.env.AVALANCHE_FUJI_RPC_URL as `https://${string}`),
+          account,
+        }).extend(publicActions);
+    }
 
-    // TODO replace these once PR gets merged to support iotex
+    else if (network === "base-sepolia") {
+        return createWalletClient({
+          chain: baseSepolia,
+          transport: http(process.env.BASE_SEPOLIA_RPC_URL as `https://${string}`),
+          account,
+        }).extend(publicActions);
+    }
+
+    else if (network === "base") {
+        return createWalletClient({
+          chain: base,
+          transport: http(process.env.BASE_RPC_URL as `https://${string}`),
+          account,
+        }).extend(publicActions);
+    }
+
+    else if (network === "sei") {
+        return createWalletClient({
+          chain: sei,
+          transport: http(process.env.SEI_RPC_URL as `https://${string}`),
+          account,
+        }).extend(publicActions);
+    }
+
+    else if (network === "sei-testnet") {
+        return createWalletClient({
+          chain: seiTestnet,
+          transport: http(process.env.SEI_TESTNET_RPC_URL as `https://${string}`),
+          account,
+        }).extend(publicActions);
+    }
+
     else if (network === "iotex") {
         return createWalletClient({
           chain: iotex,
-          transport: http(),
+          transport: http(process.env.IOTEX_RPC_URL as `https://${string}`),
           account,
         }).extend(publicActions);
     }

@@ -6,10 +6,10 @@ import {
   computeRoutePatterns,
   findMatchingPaymentRequirements,
   findMatchingRoute,
-  getPaywallHtml,
   processPriceToAtomicAmount,
   toJsonSafe,
 } from "x402/shared";
+import { getLocalPaywallHtml } from "./paywall/getPaywallHtml";
 import {
   FacilitatorConfig,
   moneySchema,
@@ -282,10 +282,10 @@ export function paymentMiddleware(
 
           const html =
             customPaywallHtml ??
-            getPaywallHtml({
+            getLocalPaywallHtml({
               amount: displayAmount,
               paymentRequirements: toJsonSafe(paymentRequirements) as Parameters<
-                typeof getPaywallHtml
+                typeof getLocalPaywallHtml
               >[0]["paymentRequirements"],
               currentUrl: request.url,
               testnet: network === "base-sepolia",

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "X402 Echo Server",
-  description: "Test your X402 clients against a live X402 server. All payments are refunded.",
+  title: "x402 Echo - Test x402 Payments",
+  description: "Try x402 payments against a live merchant today. Get 100% of your payment refunded.",
 };
 
 export default function RootLayout({

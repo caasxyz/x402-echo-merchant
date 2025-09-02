@@ -288,7 +288,7 @@ export function paymentMiddleware(
                 typeof getLocalPaywallHtml
               >[0]["paymentRequirements"],
               currentUrl: request.url,
-              testnet: network === "base-sepolia",
+              testnet: network === "base-sepolia" || network === "avalanche-fuji" || network === "sei-testnet",
             });
           return new NextResponse(html, {
             status: 402,
@@ -376,7 +376,6 @@ export function paymentMiddleware(
         }),
       });
       const settlement = await settleRes.json();
-
       if (settlement.success) {
         // refund the payment
         const refundResult = await refund(

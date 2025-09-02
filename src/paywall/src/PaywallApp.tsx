@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { FundButton, getOnrampBuyUrl } from "@coinbase/onchainkit/fund";
@@ -9,8 +10,8 @@ import {
   WalletDropdownDisconnect,
 } from "@coinbase/onchainkit/wallet";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createPublicClient, formatUnits, http, publicActions } from "viem";
-import { base, baseSepolia } from "viem/chains";
+import { createPublicClient, createWalletClient, custom, formatUnits, http, publicActions } from "viem";
+import { base, baseSepolia, avalanche, avalancheFuji, sei, seiTestnet, iotex } from "viem/chains";
 import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
 
 import { selectPaymentRequirements } from "x402/client";
@@ -28,7 +29,7 @@ import { ensureValidAmount } from "./utils";
  */
 export function PaywallApp() {
   const { address, isConnected, chainId: connectedChainId } = useAccount();
-  const { switchChainAsync } = useSwitchChain();
+  const { switchChainAsync, chains: switchableChains } = useSwitchChain();
   const { data: wagmiWalletClient } = useWalletClient();
   const { sessionToken } = useOnrampSessionToken(address);
 
@@ -41,9 +42,37 @@ export function PaywallApp() {
   const x402 = window.x402;
   const amount = x402.amount || 0;
   const testnet = x402.testnet ?? true;
-  const paymentChain = testnet ? baseSepolia : base;
-  const chainName = testnet ? "Base Sepolia" : "Base";
-  const network = testnet ? "base-sepolia" : "base";
+  const requirements = Array.isArray(x402.paymentRequirements)
+    ? x402.paymentRequirements[0]
+    : x402.paymentRequirements;
+  const network = requirements?.network;
+  const paymentChain = network === "base-sepolia"
+    ? baseSepolia
+    : network === "avalanche-fuji"
+    ? avalancheFuji
+    : network === "sei-testnet"
+    ? seiTestnet
+    : network === "sei"
+    ? sei
+    : network === "avalanche"
+    ? avalanche
+    : network === "iotex"
+    ? iotex
+    : base;
+
+  const chainName = network === "base-sepolia"
+    ? "Base Sepolia"
+    : network === "avalanche-fuji"
+    ? "Avalanche Fuji"
+    : network === "sei-testnet"
+    ? "Sei Testnet"
+    : network === "sei"
+    ? "Sei"
+    : network === "avalanche"
+    ? "Avalanche"
+    : network === "iotex"
+    ? "Iotex"
+    : "Base";
   const showOnramp = Boolean(!testnet && isConnected && x402.sessionTokenEndpoint);
 
   useEffect(() => {
@@ -111,6 +140,37 @@ export function PaywallApp() {
       return;
     }
 
+    if (!switchableChains?.some(c => c.id === paymentChain.id)) {
+      try {
+        const ethereum: any = (window as any)?.ethereum;
+        if (!ethereum?.request) {
+          setStatus("Your wallet doesn't support adding networks. Please add it manually.");
+          return;
+        }
+        await ethereum.request({
+          method: "wallet_addEthereumChain",
+          params: [
+            {
+              chainId: `0x${paymentChain.id.toString(16)}`,
+              chainName,
+              nativeCurrency: paymentChain.nativeCurrency,
+              rpcUrls: paymentChain.rpcUrls?.default?.http || [],
+              blockExplorerUrls: paymentChain.blockExplorers?.default
+                ? [paymentChain.blockExplorers.default.url]
+                : [],
+            },
+          ],
+        });
+      } catch (addErr) {
+        setStatus(
+          addErr instanceof Error
+            ? addErr.message
+            : "Failed to add network. Please add it in your wallet and try again.",
+        );
+        return;
+      }
+    }
+
     try {
       setStatus("");
       await switchChainAsync({ chainId: paymentChain.id });
@@ -119,7 +179,7 @@ export function PaywallApp() {
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Failed to switch network");
     }
-  }, [switchChainAsync, paymentChain, isCorrectChain]);
+  }, [switchChainAsync, paymentChain, isCorrectChain, switchableChains]);
 
   const handlePayment = useCallback(async () => {
     if (!address || !x402 || !paymentRequirements) {
@@ -128,13 +188,25 @@ export function PaywallApp() {
 
     await handleSwitchChain();
 
-    // Use wagmi's wallet client which has the correct provider for the connected wallet
-    // This avoids MetaMask conflicts when multiple wallets are installed
-    if (!wagmiWalletClient) {
-      setStatus("Wallet client not available. Please reconnect your wallet.");
-      return;
+    // Prefer wagmi's wallet client; fallback to EIP-1193 provider if available
+    let walletClientForSigning: any = wagmiWalletClient?.extend(publicActions);
+    if (!walletClientForSigning) {
+      try {
+        const ethereum: any = (window as any)?.ethereum;
+        if (!ethereum?.request) {
+          setStatus("No wallet provider found. Please open your wallet and reconnect.");
+          return;
+        }
+        walletClientForSigning = createWalletClient({
+          chain: paymentChain,
+          transport: custom(ethereum),
+          account: address as `0x${string}`,
+        }).extend(publicActions);
+      } catch (e) {
+        setStatus(e instanceof Error ? e.message : "Wallet client not available. Please reconnect your wallet.");
+        return;
+      }
     }
-    const walletClient = wagmiWalletClient.extend(publicActions);
 
     setIsPaying(true);
 
@@ -142,14 +214,14 @@ export function PaywallApp() {
       setStatus("Checking USDC balance...");
       const balance = await getUSDCBalance(publicClient, address);
 
-      if (balance === 0n) {
+      if (balance === BigInt(0)) {
         throw new Error(`Insufficient balance. Make sure you have USDC on ${chainName}`);
       }
 
       setStatus("Creating payment signature...");
       const validPaymentRequirements = ensureValidAmount(paymentRequirements);
       const initialPayment = await exact.evm.createPayment(
-        walletClient,
+        walletClientForSigning,
         1,
         validPaymentRequirements,
       );
@@ -172,7 +244,7 @@ export function PaywallApp() {
         if (errorData && typeof errorData.x402Version === "number") {
           // Retry with server's x402Version
           const retryPayment = await exact.evm.createPayment(
-            walletClient,
+            walletClientForSigning,
             errorData.x402Version,
             validPaymentRequirements,
           );

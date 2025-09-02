@@ -1,27 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { facilitator } from "@coinbase/x402";
 import { toJsonSafe } from "x402/shared";
 
 export async function POST(request: NextRequest) {
   const { paymentPayload, paymentRequirements } = await request.json();
 
   // get the url and headers for the facilitator
-  let url;
-  let headers;
-  const isTestnet = paymentRequirements.network === "base-sepolia";
-  if (isTestnet) {
-    url = "https://x402.org/facilitator";
-    headers = {};
-  } else {
-    url = facilitator.url;
-    if (facilitator.createAuthHeaders) {
-      headers = (await facilitator.createAuthHeaders()).verify;
-    } else { headers = {}; }
-  }
+  const url = process.env.FACILITATOR_URL as `${string}://${string}`;
+  const headers = {'Content-Type': 'application/json'};
 
-  // set the content type to json -- this should be fixed in the x402 library
-  headers["Content-Type"] = "application/json";
-  
   // make the request to the facilitator
   const res = await fetch(`${url}/verify`, {
     method: "POST",

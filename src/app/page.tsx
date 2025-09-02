@@ -2,160 +2,41 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Copy, ExternalLink, Github, Heart, Moon, Sun } from 'lucide-react';
+import { Copy, ExternalLink, Github, Heart, Moon, Sun, Code, Globe } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-const ENDPOINTS = [
+const MAINNET_ENDPOINTS = [
   {
     label: 'Base Mainnet',
     url: `${API_URL}/api/base/paid-content`,
   },
+  // {
+  //   label: 'Avalanche Mainnet',
+  //   url: `${API_URL}/api/avalanche/paid-content`,
+  // },
+  {
+    label: 'Sei Mainnet',
+    url: `${API_URL}/api/sei/paid-content`,
+  },
+];
+
+const TESTNET_ENDPOINTS = [
   {
     label: 'Base Sepolia',
     url: `${API_URL}/api/base-sepolia/paid-content`,
   },
+  {
+    label: 'Avalanche Fuji',
+    url: `${API_URL}/api/avalanche-fuji/paid-content`,
+  },
+  {
+    label: 'Sei Testnet',
+    url: `${API_URL}/api/sei-testnet/paid-content`,
+  },
 ];
 
-const QUICKSTART = {
-  fetch: [
-    {
-      title: 'Install',
-      code: 'npm install x402-fetch',
-      lang: 'bash',
-    },
-    {
-      title: 'Base Mainnet',
-      code: `import { createWalletClient, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { wrapFetchWithPayment } from "x402-fetch";
-import { base } from "viem/chains";
-
-// Create a wallet client
-const account = privateKeyToAccount("0xYourPrivateKey");
-const client = createWalletClient({
-  account,
-  transport: http(),
-  chain: base,
-});
-
-// Wrap the fetch function with payment handling
-const fetchWithPay = wrapFetchWithPayment(fetch, client);
-
-// Make a request that may require payment
-console.log("making request + payment");
-const response = await fetchWithPay(
-  "${API_URL}/api/base/paid-content",
-  {
-    method: "GET",
-  }
-);
-
-const data = await response.text();
-console.log(data);`,
-      lang: 'typescript',
-    },
-    {
-      title: 'Base Sepolia',
-      code: `import { createWalletClient, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { wrapFetchWithPayment } from "x402-fetch";
-import { baseSepolia } from "viem/chains";
-
-// Create a wallet client
-const account = privateKeyToAccount("0xYourPrivateKey");
-const client = createWalletClient({
-  account,
-  transport: http(),
-  chain: baseSepolia,
-});
-
-// Wrap the fetch function with payment handling
-const fetchWithPay = wrapFetchWithPayment(fetch, client);
-
-// Make a request that may require payment
-console.log("making request + payment");
-const response = await fetchWithPay(
-  "${API_URL}/api/base-sepolia/paid-content",
-  {
-    method: "GET",
-  }
-);
-
-const data = await response.text();
-console.log(data);`,
-      lang: 'typescript',
-    },
-  ],
-  axios: [
-    {
-      title: 'Install',
-      code: 'npm install x402-axios',
-      lang: 'bash',
-    },
-    {
-      title: 'Base Mainnet',
-      code: `import { createWalletClient, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { withPaymentInterceptor } from "x402-axios";
-import axios from "axios";
-import { base } from "viem/chains";
-
-// Create a wallet client
-const account = privateKeyToAccount("0xYourPrivateKey");
-const client = createWalletClient({
-  account,
-  transport: http(),
-  chain: base,
-});
-
-// Create an Axios instance with payment handling
-const api = withPaymentInterceptor(
-  axios.create({
-    baseURL: "${API_URL}",
-  }),
-  client
-);
-
-// Make a request that may require payment
-console.log("making request + payment");
-const response = await api.get("/api/base/paid-content");
-console.log(response.data);`,
-      lang: 'typescript',
-    },
-    {
-      title: 'Base Sepolia',
-      code: `import { createWalletClient, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { withPaymentInterceptor } from "x402-axios";
-import axios from "axios";
-import { baseSepolia } from "viem/chains";
-
-// Create a wallet client
-const account = privateKeyToAccount("0xYourPrivateKey");
-const client = createWalletClient({
-  account,
-  transport: http(),
-  chain: baseSepolia,
-});
-
-// Create an Axios instance with payment handling
-const api = withPaymentInterceptor(
-  axios.create({
-    baseURL: "${API_URL}",
-  }),
-  client
-);
-
-// Make a request that may require payment
-console.log("making request + payment");
-const response = await api.get("/api/base-sepolia/paid-content");
-console.log(response.data);`,
-      lang: 'typescript',
-    },
-  ],
-};
+// Quickstart examples removed in favor of docs links
 
 const RESOURCES = [
   {
@@ -175,33 +56,7 @@ const RESOURCES = [
   },
 ];
 
-function CodeBlock({ code }: { code: string; lang?: string }) {
-  const [copied, setCopied] = React.useState(false);
-  return (
-    <div className="relative bg-gray-100 dark:bg-card rounded-md p-4 mb-6 overflow-x-auto group">
-      <pre className="text-sm leading-relaxed font-mono text-gray-800 dark:text-gray-100" style={{ fontFamily: 'Menlo, monospace' }}>
-        <code>{code}</code>
-      </pre>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="absolute top-2 right-2 opacity-70 group-hover:opacity-100"
-        onClick={async () => {
-          await navigator.clipboard.writeText(code);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1200);
-        }}
-        aria-label="Copy code"
-      >
-        <Copy className="w-4 h-4" />
-        <span className="sr-only">Copy</span>
-      </Button>
-      {copied && (
-        <span className="absolute top-2 right-12 text-xs text-indigo-600 font-semibold">Copied!</span>
-      )}
-    </div>
-  );
-}
+// CodeBlock removed with inline examples
 
 function useThemeToggle() {
   const [isDark, setIsDark] = React.useState(() =>
@@ -234,25 +89,43 @@ export default function Home() {
         </Button>
       </div>
       {/* Hero Section */}
-      <section className="w-full max-w-2xl mx-auto py-16 flex flex-col items-center text-center">
-        <h1 className="text-4xl sm:text-5xl font-semibold mb-4 tracking-tight">x402 Echo Merchant</h1>
-        <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-xl">
+      <section className="w-full max-w-2xl mx-auto pt-16 pb-8 flex flex-col items-center text-center">
+        <h1 className="text-4xl sm:text-5xl font-semibold mb-4 tracking-tight">x402 Echo</h1>
+        <p className="text-lg sm:text-xl text-gray-600 dark:text-muted-foreground mb-8 max-w-xl">
           Instantly test the <a href="https://x402.org" target="_blank" rel="noopener noreferrer" className="text-indigo-600 font-medium">x402 protocol</a> for pay-per-use APIs.<br />
           Perfect for agentic and micro transactions.<br /><br />
           Live endpoints. Real payments. <span className="text-green-600">100% free.</span>
         </p>
-        <Card className="w-full bg-gray-50 border border-gray-200 shadow-none mb-4">
+        <Card className="w-full bg-card border border-border shadow-none mb-4 mt-12">
           <CardContent className="py-6 flex flex-col gap-4">
-            <div className="text-base text-gray-700 font-medium mb-2">Test your x402 client against:</div>
-            {ENDPOINTS.map((ep) => (
-              <div key={ep.label} className="flex items-center justify-between bg-white rounded-md px-4 py-3 border border-gray-100 mb-2">
-                <span className="font-mono text-sm text-gray-900">{ep.label}</span>
+            <div className="text-base text-foreground font-medium mb-2">Test your x402 client against:</div>
+            <div className="text-sm text-muted-foreground font-semibold mt-4 mb-1">Testnets</div>
+            {TESTNET_ENDPOINTS.map((ep) => (
+              <div key={ep.label} className="flex items-center justify-between bg-muted rounded-md px-4 py-3 border border-border mb-2">
+                <span className="font-mono text-sm text-foreground">{ep.label}</span>
                 <div className="flex items-center gap-1">
                   <a
                     href={ep.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-indigo-600 underline hover:text-indigo-800 text-sm font-medium flex items-center gap-1"
+                    className="text-indigo-600 dark:text-indigo-400 underline hover:text-indigo-800 dark:hover:text-indigo-300 text-sm font-medium flex items-center gap-1"
+                  >
+                    {ep.url} <ExternalLink className="w-4 h-4" />
+                  </a>
+                  <CopyButton url={ep.url} />
+                </div>
+              </div>
+            ))}
+            <div className="text-sm text-muted-foreground font-semibold mt-1 mb-1">Mainnets</div>
+            {MAINNET_ENDPOINTS.map((ep) => (
+              <div key={ep.label} className="flex items-center justify-between bg-muted rounded-md px-4 py-3 border border-border mb-2">
+                <span className="font-mono text-sm text-foreground">{ep.label}</span>
+                <div className="flex items-center gap-1">
+                  <a
+                    href={ep.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 dark:text-indigo-400 underline hover:text-indigo-800 dark:hover:text-indigo-300 text-sm font-medium flex items-center gap-1"
                   >
                     {ep.url} <ExternalLink className="w-4 h-4" />
                   </a>
@@ -263,31 +136,35 @@ export default function Home() {
           </CardContent>
         </Card>
       </section>
-      {/* Quickstart Section */}
-      <section className="w-full max-w-2xl mx-auto py-16">
-        <h2 className="text-2xl sm:text-3xl font-semibold mb-8 text-center">Quickstart Code Snippets</h2>
-        <Tabs defaultValue="fetch" className="w-full">
-          <TabsList className="flex gap-2 mb-6 bg-gray-100">
-            <TabsTrigger value="fetch" className="flex-1">fetch</TabsTrigger>
-            <TabsTrigger value="axios" className="flex-1">axios</TabsTrigger>
-          </TabsList>
-          <TabsContent value="fetch">
-            {QUICKSTART.fetch.map((snippet) => (
-              <div key={snippet.title} className="mb-8">
-                <div className="text-sm font-semibold text-gray-700 mb-2">{snippet.title}</div>
-                <CodeBlock code={snippet.code} lang={snippet.lang} />
-              </div>
-            ))}
-          </TabsContent>
-          <TabsContent value="axios">
-            {QUICKSTART.axios.map((snippet) => (
-              <div key={snippet.title} className="mb-8">
-                <div className="text-sm font-semibold text-gray-700 mb-2">{snippet.title}</div>
-                <CodeBlock code={snippet.code} lang={snippet.lang} />
-              </div>
-            ))}
-          </TabsContent>
-        </Tabs>
+      {/* Quickstart Section (cards linking to docs) */}
+      <section className="w-full max-w-2xl mx-auto pt-8 pb-16">
+        <h2 className="text-2xl sm:text-3xl font-semibold mb-16 text-center">Quickstart Guides</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <a href="https://docs.payai.network/x402/clients/typescript/axios" target="_blank" rel="noopener noreferrer" className="group">
+            <Card className="h-full hover:border-indigo-300 transition-colors">
+              <CardContent className="p-5 flex flex-col">
+                <div className="mb-3 p-2 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 w-fit">
+                  <Code className="w-5 h-5" />
+                </div>
+                <div className="font-semibold">Axios Quickstart</div>
+                <p className="text-sm text-muted-foreground mt-1">Attach the x402 interceptor to Axios and pay per request.</p>
+                <span className="mt-3 inline-flex items-center text-indigo-600 dark:text-indigo-400 text-sm">Read the guide <ExternalLink className="w-4 h-4 ml-1" /></span>
+              </CardContent>
+            </Card>
+          </a>
+          <a href="https://docs.payai.network/x402/clients/typescript/fetch" target="_blank" rel="noopener noreferrer" className="group">
+            <Card className="h-full hover:border-indigo-300 transition-colors">
+              <CardContent className="p-5 flex flex-col">
+                <div className="mb-3 p-2 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 w-fit">
+                  <Globe className="w-5 h-5" />
+                </div>
+                <div className="font-semibold">Fetch Quickstart</div>
+                <p className="text-sm text-muted-foreground mt-1">Wrap fetch with x402 to handle payments automatically.</p>
+                <span className="mt-3 inline-flex items-center text-indigo-600 dark:text-indigo-400 text-sm">Read the guide <ExternalLink className="w-4 h-4 ml-1" /></span>
+              </CardContent>
+            </Card>
+          </a>
+        </div>
       </section>
       {/* Resources Section */}
       <section className="w-full max-w-2xl mx-auto py-16">

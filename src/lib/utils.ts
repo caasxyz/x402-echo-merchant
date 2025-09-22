@@ -5,22 +5,67 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function getExplorerForNetwork(network: string) {
+  if (network === 'base-sepolia') {
+    return 'https://sepolia.basescan.org/tx/';
+  } else if (network === 'base') {
+    return 'https://basescan.org/tx/';
+  } else if (network === 'solana-devnet') {
+    return 'https://solscan.io/tx/';
+  } else if (network === 'solana') {
+    return 'https://solscan.io/tx/';
+  } else if (network === 'avalanche') {
+    return 'https://snowtrace.io/tx/';
+  } else if (network === 'avalanche-fuji') {
+    return 'https://testnet.snowtrace.io/tx/';
+  } else if (network === 'sei') {
+    return 'https://sei.explorer.dexscreener.com/tx/';
+  } else if (network === 'sei-testnet') {
+    return 'https://testnet.sei.explorer.dexscreener.com/tx/';
+  }
+}
+
 export function renderRizzlerHtml(
   paymentResponse: { transaction: string, network: string, payer: string },
-  refundResult: `0x${string}`
+  refundTxHash?: string,
 ) {
   const paymentTx = paymentResponse.transaction || 'N/A';
-  const refundTx = refundResult || 'N/A';
+  const refundFailed = !refundTxHash;
 
   // Determine explorer base URL
   let explorerBase = '';
+  const isSolanaDevnet = paymentResponse.network === 'solana-devnet';
   if (paymentResponse.network === 'base-sepolia') {
     explorerBase = 'https://sepolia.basescan.org/tx/';
   } else if (paymentResponse.network === 'base') {
     explorerBase = 'https://basescan.org/tx/';
   }
-  const paymentTxLink = paymentTx ? `${explorerBase}${paymentTx}` : null;
-  const refundTxLink = refundTx ? `${explorerBase}${refundTx}` : null;
+  else if (paymentResponse.network === 'solana-devnet') {
+    explorerBase = 'https://solscan.io/tx/';
+  }
+  else if (paymentResponse.network === 'solana') {
+    explorerBase = 'https://solscan.io/tx/';
+  }
+  else if (paymentResponse.network === 'avalanche') {
+    explorerBase = 'https://snowtrace.io/tx/';
+  }
+  else if (paymentResponse.network === 'avalanche-fuji') {
+    explorerBase = 'https://testnet.snowtrace.io/tx/';
+  }
+  else if (paymentResponse.network === 'sei') {
+    explorerBase = 'https://seistream.app/transactions/';
+  }
+  else if (paymentResponse.network === 'sei-testnet') {
+    explorerBase = 'https://testnet.seistream.app/transactions/';
+  }
+  else if (paymentResponse.network === 'iotex') {
+    explorerBase = 'https://iotexscan.io/tx/';
+  }
+
+  const paymentTxLink = paymentTx ? `${explorerBase}${paymentTx}${isSolanaDevnet ? '?cluster=devnet' : ''}` : null;
+  const refundTxLink = refundTxHash
+    ? `${explorerBase}${refundTxHash}${isSolanaDevnet ? '?cluster=devnet' : ''}`
+    : null;
 
   const paymentResponseJson = JSON.stringify(paymentResponse, null, 2);
 
@@ -62,8 +107,11 @@ export function renderRizzlerHtml(
     <div class="section">
       <div class="label">Payment transaction:</div>
       <div class="tx">${paymentTxLink ? `<a href="${paymentTxLink}" class="tx-link" target="_blank" rel="noopener noreferrer">${paymentTx}</a>` : paymentTx}</div>
-      <div class="label">Refund transaction:</div>
-      <div class="tx refund">${refundTxLink ? `<a href="${refundTxLink}" class="tx-link" target="_blank" rel="noopener noreferrer">${refundTx}</a>` : refundTx}</div>
+      <div class="label">Refund ${refundFailed ? 'status' : 'transaction'}:</div>
+      <div class="tx refund">${refundFailed
+        ? 'Refund failed'
+        : `<a href="${refundTxLink}" class="tx-link" target="_blank" rel="noopener noreferrer">${refundTxHash}</a>`}
+      </div>
     </div>
     <div class="section"></div>
     <div class="section">

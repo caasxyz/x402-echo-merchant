@@ -1,31 +1,59 @@
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { Address } from "viem";
+import { NextRequest, NextResponse } from "next/server";
+import { Address, getAddress } from "viem";
 import { exact } from "x402/schemes";
 import {
   computeRoutePatterns,
   findMatchingPaymentRequirements,
   findMatchingRoute,
   processPriceToAtomicAmount,
+  safeBase64Encode,
   toJsonSafe,
 } from "x402/shared";
 import { getLocalPaywallHtml } from "./paywall/getPaywallHtml";
 import {
   FacilitatorConfig,
   moneySchema,
+  ERC20TokenAmount,
+  ExactSvmPayload,
   PaymentPayload,
   PaymentRequirements,
   Resource,
   RouteConfig,
   RoutesConfig,
+  SupportedEVMNetworks,
+  SupportedSVMNetworks
 } from "x402/types";
-import { Network } from 'x402-next';
-import { refund } from "./refund";
-import { renderRizzlerHtml } from "./lib/utils";
+import { type VerifyResponse } from "x402/types";
+// eslint-disable-next-line react-hooks/rules-of-hooks
+import { useFacilitator } from "x402/verify";
+import { Network, SolanaAddress } from 'x402-next';
+import { svm } from "x402/shared";
+import { createSolanaRpc, decompileTransactionMessageFetchingLookupTables, getCompiledTransactionMessageDecoder } from "@solana/kit";
+import { parseTransferCheckedInstruction } from "@solana-program/token-2022";
+import { handlePaidContentRequest } from "./lib/paidContentHandler";
 
+const { decodeTransactionFromPayload } = svm;
 const facilitatorUrl = process.env.FACILITATOR_URL as `${string}://${string}`;
+const payToEVM = process.env.EVM_RECEIVE_PAYMENTS_ADDRESS as `0x${string}`;
+const payToSVM = process.env.SVM_RECEIVE_PAYMENTS_ADDRESS as SolanaAddress;
 
-const mainnetConfig = {
+const solanaDevnetConfig = {
+  price: '$0.01',
+  network: 'solana-devnet' as Network,
+  config: {
+    description: 'Access to protected content on solana devnet'
+  }
+} as RouteConfig;
+
+const solanaConfig = {
+  price: '$0.01',
+  network: 'solana' as Network,
+  config: {
+    description: 'Access to protected content on solana mainnet'
+  }
+} as RouteConfig;
+
+const baseConfig = {
   price: '$0.01',
   network: "base" as Network,
   config: {
@@ -78,14 +106,32 @@ const seiTestnetConfig = {
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // mainnet
+  // solana devnet
+  if (pathname.startsWith('/api/solana-devnet/')) {
+    return paymentMiddleware(
+      payToSVM,
+      { '/api/solana-devnet/paid-content': solanaDevnetConfig },
+      { url: facilitatorUrl }
+    )(request);
+  }
+
+  // solana mainnet
+  if (pathname.startsWith('/api/solana/')) {
+    return paymentMiddleware(
+      payToSVM,
+      { '/api/solana/paid-content': solanaConfig },
+      { url: facilitatorUrl }
+    )(request);
+  }
+
+  // base mainnet
   if (pathname.startsWith('/api/base/')) {
     return paymentMiddleware(
       // payTo
-      process.env.RECEIVE_PAYMENTS_ADDRESS as `0x${string}`,
+      payToEVM,
       // routes
       {
-        '/api/base/paid-content': mainnetConfig
+        '/api/base/paid-content': baseConfig
       },
       {
         url: facilitatorUrl,
@@ -97,7 +143,7 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/base-sepolia/')) {
     return paymentMiddleware(
       // payTo
-      process.env.RECEIVE_PAYMENTS_ADDRESS as `0x${string}`,
+      payToEVM,
       // routes
       { '/api/base-sepolia/paid-content': sepoliaConfig },
       // facilitator
@@ -110,7 +156,7 @@ export function middleware(request: NextRequest) {
   // avalanche mainnet
   if (pathname.startsWith('/api/avalanche/')) {
     return paymentMiddleware(
-      process.env.RECEIVE_PAYMENTS_ADDRESS as `0x${string}`,
+      payToEVM,
       { '/api/avalanche/paid-content': avalancheConfig },
       {
         url: facilitatorUrl,
@@ -121,7 +167,7 @@ export function middleware(request: NextRequest) {
   // avalanche-fuji (testnet)
   if (pathname.startsWith('/api/avalanche-fuji/')) {
     return paymentMiddleware(
-      process.env.RECEIVE_PAYMENTS_ADDRESS as `0x${string}`,
+      payToEVM,
       { '/api/avalanche-fuji/paid-content': avalancheFujiConfig },
       {
         url: facilitatorUrl,
@@ -132,7 +178,7 @@ export function middleware(request: NextRequest) {
   // sei mainnet
   if (pathname.startsWith('/api/sei/')) {
     return paymentMiddleware(
-      process.env.RECEIVE_PAYMENTS_ADDRESS as `0x${string}`,
+      payToEVM,
       { '/api/sei/paid-content': seiConfig },
       {
         url: facilitatorUrl,
@@ -143,7 +189,7 @@ export function middleware(request: NextRequest) {
   // sei-testnet
   if (pathname.startsWith('/api/sei-testnet/')) {
     return paymentMiddleware(
-      process.env.RECEIVE_PAYMENTS_ADDRESS as `0x${string}`,
+      payToEVM,
       { '/api/sei-testnet/paid-content': seiTestnetConfig },
       {
         url: facilitatorUrl,
@@ -213,10 +259,12 @@ export function middleware(request: NextRequest) {
  * ```
  */
 export function paymentMiddleware(
-  payTo: Address,
+  payTo: Address | SolanaAddress,
   routes: RoutesConfig,
   facilitator?: FacilitatorConfig,
 ) {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const { verify, settle, supported } = useFacilitator(facilitator);
   const x402Version = 1;
 
   // Pre-compile route patterns to regex and extract verbs
@@ -234,7 +282,7 @@ export function paymentMiddleware(
     }
 
     const { price, network, config = {} } = matchingRoute.config;
-    const { description, mimeType, maxTimeoutSeconds, outputSchema, customPaywallHtml, resource } =
+    const { description, mimeType, maxTimeoutSeconds, outputSchema, customPaywallHtml, resource, discoverable, inputSchema, errorMessages } =
       config;
 
     const atomicAmountForAsset = processPriceToAtomicAmount(price, network);
@@ -245,21 +293,80 @@ export function paymentMiddleware(
 
     const resourceUrl =
       resource || (`${request.nextUrl.protocol}//${request.nextUrl.host}${pathname}` as Resource);
-    const paymentRequirements: PaymentRequirements[] = [
-      {
+
+
+    const paymentRequirements: PaymentRequirements[] = [];
+    
+    if (SupportedEVMNetworks.includes(network)) {
+      paymentRequirements.push({
         scheme: "exact",
         network,
         maxAmountRequired,
         resource: resourceUrl,
         description: description ?? "",
         mimeType: mimeType ?? "application/json",
-        payTo,
+        payTo: getAddress(payTo),
         maxTimeoutSeconds: maxTimeoutSeconds ?? 300,
-        asset: asset?.address ?? "",
-        outputSchema,
-        extra: asset?.eip712,
-      },
-    ];
+        asset: getAddress(asset.address),
+        // TODO: Rename outputSchema to requestStructure
+        outputSchema: {
+          input: {
+            type: "http",
+            method,
+            discoverable: discoverable ?? true,
+            ...inputSchema,
+          },
+          output: outputSchema,
+        },
+        extra: (asset as ERC20TokenAmount["asset"]).eip712,
+      });
+    }
+    // svm networks
+    else if (SupportedSVMNetworks.includes(network)) {
+      // network call to get the supported payments from the facilitator
+      const paymentKinds = await supported();
+
+      // find the payment kind that matches the network and scheme
+      let feePayer: string | undefined;
+      for (const kind of paymentKinds.kinds) {
+        if (kind.network === network && kind.scheme === "exact") {
+          feePayer = kind?.extra?.feePayer;
+          break;
+        }
+      }
+
+      // svm networks require a fee payer
+      if (!feePayer) {
+        throw new Error(`The facilitator did not provide a fee payer for network: ${network}.`);
+      }
+
+      // build the payment requirements for svm
+      paymentRequirements.push({
+        scheme: "exact",
+        network,
+        maxAmountRequired,
+        resource: resourceUrl,
+        description: description ?? "",
+        mimeType: mimeType ?? "",
+        payTo: payTo,
+        maxTimeoutSeconds: maxTimeoutSeconds ?? 60,
+        asset: asset.address,
+        // TODO: Rename outputSchema to requestStructure
+        outputSchema: {
+          input: {
+            type: "http",
+            method,
+            ...inputSchema,
+          },
+          output: outputSchema,
+        },
+        extra: {
+          feePayer,
+        },
+      });
+    } else {
+      throw new Error(`Unsupported network: ${network}`);
+    }
 
     // Check for payment header
     const paymentHeader = request.headers.get("X-PAYMENT");
@@ -339,21 +446,13 @@ export function paymentMiddleware(
     }
 
     // Verify payment via API route
-    const verifyRes = await fetch(`${request.nextUrl.origin}/api/facilitator/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        paymentPayload: decodedPayment,
-        paymentRequirements: selectedPaymentRequirements,
-      }),
-    });
-    const verification = await verifyRes.json();
-    
+    const verification: VerifyResponse = await verify(decodedPayment, selectedPaymentRequirements);
+
     if (!verification.isValid) {
       return new NextResponse(
         JSON.stringify({
           x402Version,
-          error: verification.invalidReason,
+          error: errorMessages?.verificationFailed || verification.invalidReason,
           accepts: paymentRequirements,
           payer: verification.payer,
         }),
@@ -362,45 +461,133 @@ export function paymentMiddleware(
     }
 
     // Proceed with request
-    const response = await NextResponse.next();
+    const response = NextResponse.next();
+
+    // if the response from the protected route is >= 400, do not settle the payment
+    if (response.status >= 400) {
+      return response;
+    }
 
     // Settle payment after response via API route
     try {
-      const settleRes = await fetch(`${request.nextUrl.origin}/api/facilitator/settle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          paymentPayload: decodedPayment,
-          paymentRequirements: selectedPaymentRequirements,
-          facilitatorConfig: facilitator,
-        }),
-      });
-      const settlement = await settleRes.json();
-      if (settlement.success) {
-        // refund the payment
-        const refundResult = await refund(
-          decodedPayment.payload.authorization.from,
-          selectedPaymentRequirements
-        );
+      const settlement = await settle(decodedPayment, selectedPaymentRequirements);
 
-        // prepare response data
-        const paymentResponse = {
+      if (settlement.success) {
+        // need to get the actual payer for the tx, currently the x402 package has a bug
+        // TODO change this once the x402 package is fixed
+        let payer: string;
+        let svmContext: {
+          mint: string;
+          sourceTokenAccount: string;
+          destinationTokenAccount: string;
+          decimals: number;
+          tokenProgram?: string;
+        } | undefined;
+        if (SupportedSVMNetworks.includes(settlement.network)) {
+          const rpcUrl = settlement.network === 'solana-devnet'
+            ? (process.env.SOLANA_DEVNET_RPC_URL ?? 'https://api.devnet.solana.com')
+            : (process.env.SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com');
+          const rpc = createSolanaRpc(rpcUrl);
+          const encodedSolanaTx = await decodeTransactionFromPayload(decodedPayment.payload as ExactSvmPayload);
+          const compiledTransactionMessage = getCompiledTransactionMessageDecoder().decode(
+            encodedSolanaTx.messageBytes,
+          );
+          const txMessage = await decompileTransactionMessageFetchingLookupTables(
+            compiledTransactionMessage,
+            rpc,
+          );
+          type TransferCheckedIx = {
+            accounts: {
+              authority: { address: string };
+              mint: { address: string };
+              destination: { address: string };
+              source: { address: string };
+            };
+            data: { decimals: number };
+            programAddress: string;
+          };
+          const ixIndex = txMessage.instructions.length > 3 ? 3 : 2;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const transferIx = parseTransferCheckedInstruction(txMessage.instructions[ixIndex] as any) as unknown as TransferCheckedIx;
+          payer = transferIx.accounts.authority.address;
+          // Build svmContext for refund API
+          svmContext = {
+            mint: transferIx.accounts.mint.address,
+            // reverse source/destination for refund
+            sourceTokenAccount: transferIx.accounts.destination.address,
+            destinationTokenAccount: transferIx.accounts.source.address,
+            decimals: transferIx.data.decimals,
+            tokenProgram: transferIx.programAddress,
+          };
+        }
+        else {
+          payer = settlement.payer || "";
+        }
+
+        const responseHeaderData = {
           success: true,
           transaction: settlement.transaction,
           network: settlement.network,
-          payer: settlement.payer,
+          payer,
         };
-        
-        // build the html response
-        const html = renderRizzlerHtml(paymentResponse, refundResult);
+        const paymentResponseHeader = safeBase64Encode(
+          JSON.stringify(responseHeaderData),
+        );
+        response.headers.set(
+          "X-PAYMENT-RESPONSE",
+          paymentResponseHeader,
+        );
 
-        return new NextResponse(html, {
-          status: 200,
-          headers: {
-            'Content-Type': 'text/html',
-            'X-PAYMENT-RESPONSE': JSON.stringify(paymentResponse)
-          }
+        if (!payer || payer === "") {
+          return response;
+        }
+        
+        // refund the payment via Node API route for EVM only in this branch
+        const apiUrl = `${request.nextUrl.protocol}//${request.nextUrl.host}/api/facilitator/refund`;
+        const refundResp = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipient: payer, selectedPaymentRequirements, svmContext }),
         });
+        if (refundResp.ok) {
+          const { refundTxHash } = await refundResp.json();
+          // Build a request for the paidContentHandler with the payment info header
+          const forwardHeaders = new Headers();
+          // preserve content negotiation and user agent
+          const acceptHeader = request.headers.get('accept');
+          const userAgentHeader = request.headers.get('user-agent');
+          if (acceptHeader) forwardHeaders.set('accept', acceptHeader);
+          if (userAgentHeader) forwardHeaders.set('user-agent', userAgentHeader);
+          forwardHeaders.set('x-payment-response', paymentResponseHeader);
+          const handlerRequest = new NextRequest(request.url, { headers: forwardHeaders, method: 'GET' });
+          // Use the configured network for default display
+          const handlerResponse = await handlePaidContentRequest(handlerRequest, network as unknown as string, refundTxHash);
+          // ensure the client still receives the payment response header
+          handlerResponse.headers.set('X-PAYMENT-RESPONSE', paymentResponseHeader);
+          return handlerResponse;
+        } else {
+          // Forward to handler without refundTxHash to indicate failure
+          const forwardHeaders = new Headers();
+          const acceptHeader = request.headers.get('accept');
+          const userAgentHeader = request.headers.get('user-agent');
+          if (acceptHeader) forwardHeaders.set('accept', acceptHeader);
+          if (userAgentHeader) forwardHeaders.set('user-agent', userAgentHeader);
+          forwardHeaders.set('x-payment-response', paymentResponseHeader);
+          forwardHeaders.set('x-refund-failed', 'true');
+          const handlerRequest = new NextRequest(request.url, { headers: forwardHeaders, method: 'GET' });
+          const handlerResponse = await handlePaidContentRequest(handlerRequest, network as unknown as string);
+          handlerResponse.headers.set('X-PAYMENT-RESPONSE', paymentResponseHeader);
+          return handlerResponse;
+        }
+      }
+      else {
+        return new NextResponse(
+          JSON.stringify({
+            x402Version,
+            error: "Settlement failed",
+            accepts: paymentRequirements,
+          }),
+        );
       }
     } catch (error) {
       console.error("error", error);
@@ -408,7 +595,9 @@ export function paymentMiddleware(
       return new NextResponse(
         JSON.stringify({
           x402Version,
-          error: error instanceof Error ? error : "Settlement failed",
+          error:
+            errorMessages?.settlementFailed ||
+            (error instanceof Error ? error : "Settlement failed"),
           accepts: paymentRequirements,
         }),
         { status: 402, headers: { "Content-Type": "application/json" } },
@@ -421,6 +610,8 @@ export function paymentMiddleware(
 
 export const config = {
   matcher: [
+    '/api/solana-devnet/paid-content/:path*',
+    '/api/solana/paid-content/:path*',
     '/api/base/paid-content/:path*',
     '/api/base-sepolia/paid-content/:path*',
     '/api/avalanche/paid-content/:path*',

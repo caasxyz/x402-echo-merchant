@@ -60,11 +60,25 @@ A modern, developer-focused pay-per-use API demo server for the [x402 protocol](
 
 ## Environment Variables
 
-- `NEXT_PUBLIC_API_URL` - The URL of the server
-- `CDP_API_KEY_ID` - Coinbase Developer Platform Key
-- `CDP_API_KEY_SECRET` - Coinbase Developer Platform Key Secret
-- `RECEIVE_PAYMENTS_ADDRESS` - Address to receive payments to
-- `BASE_PRIVATE_KEY` - Private key of address to refund payments from
+- `NEXT_PUBLIC_API_URL` - Base URL of the server (used by the web app)
+- `FACILITATOR_URL` - URL of the x402 facilitator service (e.g. `https://facilitator.payai.network`)
+
+- `EVM_RECEIVE_PAYMENTS_ADDRESS` - EVM address to receive payments to
+- `SVM_RECEIVE_PAYMENTS_ADDRESS` - Solana address to receive payments to
+- `EVM_PRIVATE_KEY` - EVM private key used to send refunds (hex string starting with `0x`)
+- `SVM_PRIVATE_KEY` - Solana private key used to send refunds
+
+- `BASE_RPC_URL` - Base Mainnet RPC URL (https)
+- `BASE_SEPOLIA_RPC_URL` - Base Sepolia RPC URL (https)
+- `AVALANCHE_RPC_URL` - Avalanche Mainnet RPC URL (https)
+- `AVALANCHE_FUJI_RPC_URL` - Avalanche Fuji Testnet RPC URL (https)
+- `SEI_RPC_URL` - Sei Mainnet RPC URL (https)
+- `SEI_TESTNET_RPC_URL` - Sei Testnet RPC URL (https)
+- `SOLANA_RPC_URL` - Solana Mainnet RPC URL (https)
+- `SOLANA_DEVNET_RPC_URL` - Solana Devnet RPC URL (https)
+- `SOLANA_WS_URL` - (optional) Solana Mainnet WebSocket URL (wss)
+- `SOLANA_DEVNET_WS_URL` - (optional) Solana Devnet WebSocket URL (wss)
+- `IOTEX_RPC_URL` - (optional) IoTeX Mainnet RPC URL (https)
 
 ---
 

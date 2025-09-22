@@ -4,24 +4,44 @@ import {
     erc20Abi,
     getAddress,
     publicActions,
+    type WalletClient
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { avalanche, avalancheFuji, base, baseSepolia, iotex, sei, seiTestnet } from 'viem/chains';
+import { createSigner, PaymentRequirements, SupportedEVMNetworks, SupportedSVMNetworks, Signer } from 'x402/types';
 import { Network } from 'x402-next';
-import { PaymentRequirements, evm } from 'x402/types';
+import {
+    appendTransactionMessageInstructions,
+    createSolanaRpc,
+    createSolanaRpcSubscriptions,
+    createTransactionMessage,
+    getSignatureFromTransaction,
+    sendAndConfirmTransactionFactory,
+    setTransactionMessageFeePayerSigner,
+    setTransactionMessageLifetimeUsingBlockhash,
+    signTransactionMessageWithSigners,
+    type Address as SolAddress,
+    type TransactionSigner,
+} from '@solana/kit';
+import {
+    findAssociatedTokenPda,
+    getCreateAssociatedTokenInstructionAsync,
+    getTransferCheckedInstruction,
+} from '@solana-program/token-2022';
+import { fetchMint } from '@solana-program/token-2022';
 
 // load the private key from the .env file
-const privateKey = process.env.BASE_PRIVATE_KEY as `0x${string}`;
-const account = privateKeyToAccount(privateKey);
+const evmPrivateKey = process.env.EVM_PRIVATE_KEY as `0x${string}`;
+const account = privateKeyToAccount(evmPrivateKey);
 
-const { createSigner } = evm;
+const svmPrivateKey = process.env.SVM_PRIVATE_KEY as string;
 
 /**
  * Get a signer for the network
  * @param network - The network to get a signer for
  * @returns The signer
  */
-const getSigner = (network: Network) => {
+const getSigner = async (network: Network) => {
     if (network === "avalanche") {
         return createWalletClient({
           chain: avalanche,
@@ -77,8 +97,16 @@ const getSigner = (network: Network) => {
         }).extend(publicActions);
     }
 
+    else if (network === "solana-devnet") {
+      return await createSigner(network, svmPrivateKey);
+    }
+
+    else if (network === "solana") {
+      return await createSigner(network, svmPrivateKey);
+  }
+
     else {
-        return createSigner(network, privateKey);
+        throw new Error(`Unsupported network: ${network}`);
     }
 }
 
@@ -89,17 +117,24 @@ const getSigner = (network: Network) => {
  */
 export const refund = async (
     recipient: string,
-    selectedPaymentRequirements: PaymentRequirements
+    selectedPaymentRequirements: PaymentRequirements,
+    svmContext?: {
+      mint: string;
+      sourceTokenAccount: string;
+      destinationTokenAccount: string;
+      decimals: number;
+      tokenProgram?: string;
+    }
 ) => {
+  if (SupportedEVMNetworks.includes(selectedPaymentRequirements.network)) {
     // create a signer for the network
-    const signer = getSigner(selectedPaymentRequirements.network);
-
-    // TODO determine if the asset is ETH or ERC20
+    const signer = await getSigner(selectedPaymentRequirements.network) as WalletClient;
 
     // call the ERC20 transfer function
     const toAddress = getAddress(recipient as `0x${string}`);
     const contractAddress = getAddress(selectedPaymentRequirements.asset as `0x${string}`);
     const result = await signer.writeContract({
+        chain: signer.chain,
         address: contractAddress,
         abi: erc20Abi,
         functionName: 'transfer',
@@ -111,4 +146,91 @@ export const refund = async (
     });
 
     return result;
+  }
+  else if (SupportedSVMNetworks.includes(selectedPaymentRequirements.network)) {
+    const signer = await getSigner(selectedPaymentRequirements.network) as Signer;
+    const kitSigner = signer as unknown as TransactionSigner<string>;
+    const isDevnet = selectedPaymentRequirements.network === 'solana-devnet';
+    const rpcUrl = isDevnet
+      ? (process.env.SOLANA_DEVNET_RPC_URL ?? 'https://api.devnet.solana.com')
+      : (process.env.SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com');
+    const wsUrl = isDevnet
+      ? (process.env.SOLANA_DEVNET_WS_URL ?? 'wss://api.devnet.solana.com')
+      : (process.env.SOLANA_WS_URL ?? 'wss://api.mainnet-beta.solana.com');
+
+    const rpc = createSolanaRpc(rpcUrl);
+    const rpcSubscriptions = createSolanaRpcSubscriptions(wsUrl);
+
+    // Resolve latest blockhash for transaction lifetime
+    const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+    // Determine mint and associated token accounts
+    const mintAddress = (svmContext?.mint ?? selectedPaymentRequirements.asset) as string;
+    let programId: SolAddress | undefined = svmContext?.tokenProgram as unknown as SolAddress | undefined;
+    let decimals: number | undefined = svmContext?.decimals;
+
+    if (!programId || decimals === undefined) {
+      const mintAccount = await fetchMint(rpc, mintAddress as unknown as SolAddress);
+      programId = mintAccount?.programAddress as SolAddress;
+      if (decimals === undefined) decimals = mintAccount.data.decimals;
+    }
+
+    // Prefer provided token accounts from the original transaction to avoid ATA creation for PDA owners
+    const sourceAta = (svmContext?.sourceTokenAccount ?? (await findAssociatedTokenPda({
+      mint: mintAddress as unknown as SolAddress,
+      owner: kitSigner.address as SolAddress,
+      tokenProgram: programId,
+    }))[0]) as unknown as SolAddress;
+
+    const destinationAta = (svmContext?.destinationTokenAccount ?? (await findAssociatedTokenPda({
+      mint: mintAddress as unknown as SolAddress,
+      owner: recipient as unknown as SolAddress,
+      tokenProgram: programId,
+    }))[0]) as unknown as SolAddress;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ixs: any[] = [];
+    if (!svmContext) {
+      const maybeCreateDestinationAtaIx = await getCreateAssociatedTokenInstructionAsync({
+        payer: kitSigner,
+        mint: mintAddress as unknown as SolAddress,
+        owner: recipient as unknown as SolAddress,
+        tokenProgram: programId,
+      });
+      if (maybeCreateDestinationAtaIx) ixs.push(maybeCreateDestinationAtaIx);
+    }
+
+    const transferIx = getTransferCheckedInstruction(
+      {
+        source: sourceAta as SolAddress,
+        mint: mintAddress as unknown as SolAddress,
+        destination: destinationAta as SolAddress,
+        authority: kitSigner,
+        amount: selectedPaymentRequirements.maxAmountRequired as unknown as bigint,
+        decimals: decimals as number,
+      },
+      {
+        programAddress: programId as SolAddress,
+      }
+    );
+    ixs.push(transferIx);
+
+    const txMessage = appendTransactionMessageInstructions(
+      ixs,
+      setTransactionMessageLifetimeUsingBlockhash(
+        latestBlockhash,
+        setTransactionMessageFeePayerSigner(
+          kitSigner,
+          createTransactionMessage({ version: 0 })
+        )
+      )
+    );
+    const signedTransaction = await signTransactionMessageWithSigners(txMessage);
+
+    await sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions })(signedTransaction, {
+      commitment: 'confirmed',
+    });
+
+    const signature = getSignatureFromTransaction(signedTransaction);
+    return signature;
+  }
 };

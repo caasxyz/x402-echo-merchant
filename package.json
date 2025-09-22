@@ -15,6 +15,7 @@
     "@radix-ui/react-accordion": "^1.2.10",
     "@radix-ui/react-slot": "^1.2.2",
     "@radix-ui/react-tabs": "^1.1.11",
+    "@solana/kit": "^2.3.0",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -26,8 +27,8 @@
     "tailwind-merge": "^3.3.0",
     "viem": "^2.22.17",
     "wagmi": "^2.12.8",
-    "x402": "^0.5.3",
-    "x402-next": "^0.5.3"
+    "x402": "^0.6.0",
+    "x402-next": "^0.6.0"
   },
   "devDependencies": {
     "@craftamap/esbuild-plugin-html": "^0.6.1",

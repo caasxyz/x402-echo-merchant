@@ -11,7 +11,7 @@ import {
 } from "@coinbase/onchainkit/wallet";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPublicClient, createWalletClient, custom, formatUnits, http, publicActions } from "viem";
-import { base, baseSepolia, avalanche, avalancheFuji, sei, seiTestnet, iotex } from "viem/chains";
+import { base, baseSepolia, avalanche, avalancheFuji, sei, seiTestnet, iotex, polygon, polygonAmoy } from "viem/chains";
 import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
 
 import { selectPaymentRequirements } from "x402/client";
@@ -58,6 +58,10 @@ export function PaywallApp() {
     ? avalanche
     : network === "iotex"
     ? iotex
+    : network === "polygon"
+    ? polygon
+    : network === "polygon-amoy"
+    ? polygonAmoy
     : base;
 
   const chainName = network === "base-sepolia"
@@ -72,6 +76,10 @@ export function PaywallApp() {
     ? "Avalanche"
     : network === "iotex"
     ? "Iotex"
+    : network === "polygon"
+    ? "Polygon"
+    : network === "polygon-amoy"
+    ? "Polygon Amoy"
     : "Base";
   const showOnramp = Boolean(!testnet && isConnected && x402.sessionTokenEndpoint);
 

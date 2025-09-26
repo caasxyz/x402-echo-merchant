@@ -7,7 +7,7 @@ import {
     type WalletClient
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { avalanche, avalancheFuji, base, baseSepolia, iotex, sei, seiTestnet } from 'viem/chains';
+import { avalanche, avalancheFuji, base, baseSepolia, iotex, sei, seiTestnet, polygon, polygonAmoy } from 'viem/chains';
 import { createSigner, PaymentRequirements, SupportedEVMNetworks, SupportedSVMNetworks, Signer } from 'x402/types';
 import { Network } from 'x402-next';
 import {
@@ -93,6 +93,22 @@ const getSigner = async (network: Network) => {
         return createWalletClient({
           chain: iotex,
           transport: http(process.env.IOTEX_RPC_URL as `https://${string}`),
+          account,
+        }).extend(publicActions);
+    }
+
+    else if (network === "polygon") {
+        return createWalletClient({
+          chain: polygon,
+          transport: http(process.env.POLYGON_RPC_URL as `https://${string}`),
+          account,
+        }).extend(publicActions);
+    }
+
+    else if (network === "polygon-amoy") {
+        return createWalletClient({
+          chain: polygonAmoy,
+          transport: http(process.env.POLYGON_AMOY_RPC_URL as `https://${string}`),
           account,
         }).extend(publicActions);
     }

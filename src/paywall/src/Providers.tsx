@@ -1,6 +1,6 @@
 import { OnchainKitProvider } from "@coinbase/onchainkit";
 import type { ReactNode } from "react";
-import { base, baseSepolia, avalanche, avalancheFuji, sei, seiTestnet, iotex } from "viem/chains";
+import { base, baseSepolia, avalanche, avalancheFuji, sei, seiTestnet, iotex, polygon, polygonAmoy } from "viem/chains";
 import "./window.d.ts";
 
 type ProvidersProps = {
@@ -33,6 +33,10 @@ export function Providers({ children }: ProvidersProps) {
     ? avalanche
     : network === "iotex"
     ? iotex
+    : network === "polygon"
+    ? polygon
+    : network === "polygon-amoy"
+    ? polygonAmoy
     : base;
 
   console.log("paymentChain", paymentChain);

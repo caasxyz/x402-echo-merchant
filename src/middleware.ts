@@ -101,6 +101,22 @@ const seiTestnetConfig = {
   }
 } as RouteConfig;
 
+const polygonConfig = {
+  price: '$0.01',
+  network: 'polygon' as Network,
+  config: {
+    description: 'Access to protected content on polygon mainnet'
+  }
+} as RouteConfig;
+
+const polygonAmoyConfig = {
+  price: '$0.01',
+  network: 'polygon-amoy' as Network,
+  config: {
+    description: 'Access to protected content on polygon amoy testnet'
+  }
+} as RouteConfig;
+
 // middleware uses a payment config that is conditional
 // based on which chain the client wants to transact on
 export function middleware(request: NextRequest) {
@@ -169,6 +185,28 @@ export function middleware(request: NextRequest) {
     return paymentMiddleware(
       payToEVM,
       { '/api/avalanche-fuji/paid-content': avalancheFujiConfig },
+      {
+        url: facilitatorUrl,
+      }
+    )(request);
+  }
+
+  // polygon mainnet
+  if (pathname.startsWith('/api/polygon/')) {
+    return paymentMiddleware(
+      payToEVM,
+      { '/api/polygon/paid-content': polygonConfig },
+      {
+        url: facilitatorUrl,
+      }
+    )(request);
+  }
+
+  // polygon-amoy (testnet)
+  if (pathname.startsWith('/api/polygon-amoy/')) {
+    return paymentMiddleware(
+      payToEVM,
+      { '/api/polygon-amoy/paid-content': polygonAmoyConfig },
       {
         url: facilitatorUrl,
       }
@@ -395,7 +433,7 @@ export function paymentMiddleware(
                 typeof getLocalPaywallHtml
               >[0]["paymentRequirements"],
               currentUrl: request.url,
-              testnet: network === "base-sepolia" || network === "avalanche-fuji" || network === "sei-testnet",
+              testnet: network === "base-sepolia" || network === "avalanche-fuji" || network === "sei-testnet" || network === "polygon-amoy",
             });
           return new NextResponse(html, {
             status: 402,
@@ -616,6 +654,8 @@ export const config = {
     '/api/base-sepolia/paid-content/:path*',
     '/api/avalanche/paid-content/:path*',
     '/api/avalanche-fuji/paid-content/:path*',
+    '/api/polygon/paid-content/:path*',
+    '/api/polygon-amoy/paid-content/:path*',
     '/api/sei/paid-content/:path*',
     '/api/sei-testnet/paid-content/:path*',
   ]

@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Copy, ExternalLink, Github, Heart, Moon, Sun, Code, Globe } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_SITE_URL;
 
 const MAINNET_ENDPOINTS = [
   {

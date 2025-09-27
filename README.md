@@ -60,7 +60,7 @@ A modern, developer-focused pay-per-use API demo server for the [x402 protocol](
 
 ## Environment Variables
 
-- `NEXT_PUBLIC_API_URL` - Base URL of the server (used by the web app)
+- `NEXT_PUBLIC_SITE_URL` - Base URL of the server (used by the web app)
 - `FACILITATOR_URL` - URL of the x402 facilitator service (e.g. `https://facilitator.payai.network`)
 
 - `EVM_RECEIVE_PAYMENTS_ADDRESS` - EVM address to receive payments to

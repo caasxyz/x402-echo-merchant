@@ -22,6 +22,10 @@ export function getExplorerForNetwork(network: string) {
     return 'https://sei.explorer.dexscreener.com/tx/';
   } else if (network === 'sei-testnet') {
     return 'https://testnet.sei.explorer.dexscreener.com/tx/';
+  } else if (network === 'polygon') {
+    return 'https://polygonscan.com/tx/';
+  } else if (network === 'polygon-amoy') {
+    return 'https://amoy.polygonscan.com/tx/';
   }
 }
 
@@ -60,6 +64,12 @@ export function renderRizzlerHtml(
   }
   else if (paymentResponse.network === 'iotex') {
     explorerBase = 'https://iotexscan.io/tx/';
+  }
+  else if (paymentResponse.network === 'polygon') {
+    explorerBase = 'https://polygonscan.com/tx/';
+  }
+  else if (paymentResponse.network === 'polygon-amoy') {
+    explorerBase = 'https://amoy.polygonscan.com/tx/';
   }
 
   const paymentTxLink = paymentTx ? `${explorerBase}${paymentTx}${isSolanaDevnet ? '?cluster=devnet' : ''}` : null;

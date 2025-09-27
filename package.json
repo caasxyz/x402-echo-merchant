@@ -27,8 +27,8 @@
     "tailwind-merge": "^3.3.0",
     "viem": "^2.22.17",
     "wagmi": "^2.12.8",
-    "x402": "^0.6.0",
-    "x402-next": "^0.6.0"
+    "x402": "^0.6.5",
+    "x402-next": "^0.6.5"
   },
   "devDependencies": {
     "@craftamap/esbuild-plugin-html": "^0.6.1",

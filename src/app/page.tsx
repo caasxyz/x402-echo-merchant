@@ -11,6 +11,10 @@ const MAINNET_ENDPOINTS = [
     label: 'Base Mainnet',
     url: `${API_URL}/api/base/paid-content`,
   },
+  {
+    label: 'Polygon Mainnet',
+    url: `${API_URL}/api/polygon/paid-content`,
+  },
   // {
   //   label: 'Avalanche Mainnet',
   //   url: `${API_URL}/api/avalanche/paid-content`,
@@ -29,6 +33,10 @@ const TESTNET_ENDPOINTS = [
   {
     label: 'Avalanche Fuji',
     url: `${API_URL}/api/avalanche-fuji/paid-content`,
+  },
+  {
+    label: 'Polygon Amoy',
+    url: `${API_URL}/api/polygon-amoy/paid-content`,
   },
   {
     label: 'Sei Testnet',

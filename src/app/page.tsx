@@ -15,6 +15,10 @@ const MAINNET_ENDPOINTS = [
     label: 'Polygon Mainnet',
     url: `${API_URL}/api/polygon/paid-content`,
   },
+  {
+    label: 'Peaq Mainnet',
+    url: `${API_URL}/api/peaq/paid-content`,
+  },
   // {
   //   label: 'Avalanche Mainnet',
   //   url: `${API_URL}/api/avalanche/paid-content`,

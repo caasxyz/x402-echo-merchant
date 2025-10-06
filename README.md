@@ -93,3 +93,56 @@ A modern, developer-focused pay-per-use API demo server for the [x402 protocol](
 ## License
 
 Apache V2
+
+---
+
+## Adding support for a new network (Echo Merchant)
+
+To add a new network (example: `peaq`) across the Echo Merchant UI, middleware, and API:
+
+0) Make sure that you `npm install` the `x402` package version that contains the new network.
+
+1) Frontend link on homepage
+   - Edit `src/app/page.tsx`
+   - Add a new entry to `MAINNET_ENDPOINTS` or `TESTNET_ENDPOINTS`:
+     - `{ label: 'Peaq Mainnet', url: `${API_URL}/api/peaq/paid-content` }`
+
+2) Middleware route & config
+   - Edit `src/middleware.ts`
+   - Create a route config for the network:
+     - `const peaqConfig = { price: '$0.01', network: 'peaq', config: { description: '...' } }`
+   - Wire the path to the paywall middleware:
+     - `if (pathname.startsWith('/api/peaq/')) { return paymentMiddleware(payToEVM, { '/api/peaq/paid-content': peaqConfig }, { url: facilitatorUrl })(request); }`
+   - Add the matcher so the middleware runs:
+     - include `'/api/peaq/paid-content/:path*'` in `export const config.matcher`.
+
+3) API route file
+   - Create `src/app/api/<network>/paid-content/route.ts` with a basic `GET` that returns `{ ok: true }`.
+   - The actual paywall logic is enforced in middleware; the route acts as the endpoint.
+
+4) Paywall app (wallet flow)
+   - Edit `src/paywall/src/PaywallApp.tsx`
+   - Import the chain from `viem/chains` and map it:
+     - Import: `import { peaq } from 'viem/chains'`
+     - Add to `paymentChain` switch and to `chainName` mapping.
+
+5) Explorer links (optional)
+   - Edit `src/lib/utils.ts` if you want explorer links for the new network in the rizzler page:
+     - Update `getExplorerForNetwork` and `renderRizzlerHtml` to include the new network.
+
+6) Environment variables
+   - Set `<NETWORK>_RPC_URL` to a private custom RPC from Alchemy if possible, otherwise find a suitable RPC for the network and add it here. `<NETWORK>` is to be replaced by the network name.
+   - Ensure you have `FACILITATOR_URL` pointing to your facilitator (which must support the network).
+   - Ensure `EVM_RECEIVE_PAYMENTS_ADDRESS` is set for EVM networks.
+   - For SVM networks, set `SVM_RECEIVE_PAYMENTS_ADDRESS`.
+
+7) Refund flow
+   - Edit `src/refund.ts` and update the EVM signer factory:
+     - Import your chain from `viem/chains` (e.g., `peaq`).
+     - Add a `network === '<network>'` branch in `getSigner` that returns a `createWalletClient` with the chain and `process.env.<NETWORK>_RPC_URL`.
+   - Ensure the `x402` package version you installed includes the new network in `SupportedEVMNetworks` so the refund path triggers for EVM.
+   - Set `<NETWORK>_RPC_URL` in your `.env` (same value used by `getSigner`).
+
+8) Test
+   - Visit `/api/<network>/paid-content` in a browser.
+   - You should see the paywall, be able to connect a wallet, pay, and receive the rizzler page.

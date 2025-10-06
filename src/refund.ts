@@ -7,7 +7,7 @@ import {
     type WalletClient
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { avalanche, avalancheFuji, base, baseSepolia, iotex, sei, seiTestnet, polygon, polygonAmoy } from 'viem/chains';
+import { avalanche, avalancheFuji, base, baseSepolia, iotex, sei, seiTestnet, polygon, polygonAmoy, peaq } from 'viem/chains';
 import { createSigner, PaymentRequirements, SupportedEVMNetworks, SupportedSVMNetworks, Signer } from 'x402/types';
 import { Network } from 'x402-next';
 import {
@@ -113,13 +113,21 @@ const getSigner = async (network: Network) => {
         }).extend(publicActions);
     }
 
+    else if (network === "peaq") {
+        return createWalletClient({
+          chain: peaq,
+          transport: http(process.env.PEAQ_RPC_URL as `https://${string}`),
+          account,
+        }).extend(publicActions);
+    }
+
     else if (network === "solana-devnet") {
       return await createSigner(network, svmPrivateKey);
     }
 
     else if (network === "solana") {
       return await createSigner(network, svmPrivateKey);
-  }
+    }
 
     else {
         throw new Error(`Unsupported network: ${network}`);

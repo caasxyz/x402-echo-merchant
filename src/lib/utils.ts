@@ -26,6 +26,8 @@ export function getExplorerForNetwork(network: string) {
     return 'https://polygonscan.com/tx/';
   } else if (network === 'polygon-amoy') {
     return 'https://amoy.polygonscan.com/tx/';
+  } else if (network === 'peaq') {
+    return 'https://peaq.subscan.io/tx/';
   }
 }
 
@@ -70,6 +72,9 @@ export function renderRizzlerHtml(
   }
   else if (paymentResponse.network === 'polygon-amoy') {
     explorerBase = 'https://amoy.polygonscan.com/tx/';
+  }
+  else if (paymentResponse.network === 'peaq') {
+    explorerBase = 'https://peaq.subscan.io/tx/';
   }
 
   const paymentTxLink = paymentTx ? `${explorerBase}${paymentTx}${isSolanaDevnet ? '?cluster=devnet' : ''}` : null;

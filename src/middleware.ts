@@ -117,6 +117,14 @@ const polygonAmoyConfig = {
   }
 } as RouteConfig;
 
+const peaqConfig = {
+  price: '$0.01',
+  network: 'peaq' as Network,
+  config: {
+    description: 'Access to protected content on peaq mainnet'
+  }
+} as RouteConfig;
+
 // middleware uses a payment config that is conditional
 // based on which chain the client wants to transact on
 export function middleware(request: NextRequest) {
@@ -207,6 +215,17 @@ export function middleware(request: NextRequest) {
     return paymentMiddleware(
       payToEVM,
       { '/api/polygon-amoy/paid-content': polygonAmoyConfig },
+      {
+        url: facilitatorUrl,
+      }
+    )(request);
+  }
+
+  // peaq mainnet
+  if (pathname.startsWith('/api/peaq/')) {
+    return paymentMiddleware(
+      payToEVM,
+      { '/api/peaq/paid-content': peaqConfig },
       {
         url: facilitatorUrl,
       }
@@ -658,5 +677,6 @@ export const config = {
     '/api/polygon-amoy/paid-content/:path*',
     '/api/sei/paid-content/:path*',
     '/api/sei-testnet/paid-content/:path*',
+    '/api/peaq/paid-content/:path*',
   ]
 };

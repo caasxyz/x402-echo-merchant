@@ -102,13 +102,12 @@ export default function Home() {
       </div>
       {/* Hero Section */}
       <section className="w-full max-w-2xl mx-auto pt-16 pb-8 flex flex-col items-center text-center">
-        <h1 className="text-4xl sm:text-5xl font-semibold mb-4 tracking-tight">x402 Echo</h1>
-        <p className="text-lg sm:text-xl text-gray-600 dark:text-muted-foreground mb-8 max-w-xl">
-          Instantly test the <a href="https://x402.org" target="_blank" rel="noopener noreferrer" className="text-indigo-600 font-medium">x402 protocol</a> for pay-per-use APIs.<br />
-          Perfect for agentic and micro transactions.<br /><br />
-          Live endpoints. Real payments. <span className="text-green-600">100% free.</span>
+        <h1 className="text-4xl sm:text-5xl font-semibold mb-4 tracking-tight">402 Echo</h1>
+        <p className="text-lg sm:text-xl text-gray-600 dark:text-muted-foreground mb-8 max-w-xl leading-relaxed">
+          Try the <a href="https://x402.org" target="_blank" rel="noopener noreferrer" className="text-indigo-600 font-medium">x402 protocol</a> for free.<br />
+          Your payment is instantly refunded.
         </p>
-        <Card className="w-full bg-card border border-border shadow-none mb-4 mt-12">
+        <Card className="w-full bg-card border border-border shadow-none mb-4 mt-8">
           <CardContent className="py-6 flex flex-col gap-4">
             <div className="text-base text-foreground font-medium mb-2">Test your x402 client against:</div>
             <div className="text-sm text-muted-foreground font-semibold mt-4 mb-1">Testnets</div>

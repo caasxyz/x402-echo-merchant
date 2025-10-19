@@ -127,30 +127,83 @@ const peaqConfig = {
 
 // middleware uses a payment config that is conditional
 // based on which chain the client wants to transact on
-export function middleware(request: NextRequest) {
+// CORS configuration via environment variable
+// Set CORS_ALLOWED_ORIGINS as a comma-separated list, e.g.:
+// CORS_ALLOWED_ORIGINS="https://example.com,https://app.example.com"
+const allowedCorsOrigins: string[] = (process.env.CORS_ALLOWED_ORIGINS || "")
+  .split(",")
+  .map(o => o.trim())
+  .filter(Boolean);
+
+function buildCorsHeaders(request: NextRequest): Headers {
+  const headers = new Headers();
+  const requestOrigin = request.headers.get("origin");
+
+  if (requestOrigin && allowedCorsOrigins.includes(requestOrigin)) {
+    headers.set("Access-Control-Allow-Origin", requestOrigin);
+    headers.set("Vary", "Origin");
+  }
+
+  // Allow credentials only when we reflect a specific origin
+  if (headers.has("Access-Control-Allow-Origin")) {
+    headers.set("Access-Control-Allow-Credentials", "true");
+  }
+
+  // Reflect requested headers for preflight
+  const requestHeaders = request.headers.get("access-control-request-headers");
+  if (requestHeaders) {
+    headers.set("Access-Control-Allow-Headers", requestHeaders);
+  } else {
+    headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-PAYMENT, X-PAYMENT-RESPONSE");
+  }
+
+  headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  headers.set("Access-Control-Max-Age", "600");
+  // Expose custom headers used by the app to the browser
+  headers.set("Access-Control-Expose-Headers", "X-PAYMENT-RESPONSE");
+
+  return headers;
+}
+
+function withCors(request: NextRequest, response: NextResponse) {
+  const corsHeaders = buildCorsHeaders(request);
+  corsHeaders.forEach((value, key) => {
+    response.headers.set(key, value);
+  });
+  return response;
+}
+
+export async function middleware(request: NextRequest) {
+  // Handle CORS preflight
+  if (request.method.toUpperCase() === "OPTIONS") {
+    const preflight = new NextResponse(null, { status: 204 });
+    return withCors(request, preflight);
+  }
   const pathname = request.nextUrl.pathname;
 
   // solana devnet
   if (pathname.startsWith('/api/solana-devnet/')) {
-    return paymentMiddleware(
+    const response = await paymentMiddleware(
       payToSVM,
       { '/api/solana-devnet/paid-content': solanaDevnetConfig },
       { url: facilitatorUrl }
     )(request);
+    return withCors(request, response);
   }
 
   // solana mainnet
   if (pathname.startsWith('/api/solana/')) {
-    return paymentMiddleware(
+    const response = await paymentMiddleware(
       payToSVM,
       { '/api/solana/paid-content': solanaConfig },
       { url: facilitatorUrl }
     )(request);
+    return withCors(request, response);
   }
 
   // base mainnet
   if (pathname.startsWith('/api/base/')) {
-    return paymentMiddleware(
+    const response = await paymentMiddleware(
       // payTo
       payToEVM,
       // routes
@@ -161,11 +214,12 @@ export function middleware(request: NextRequest) {
         url: facilitatorUrl,
       }
     )(request);
+    return withCors(request, response);
   }
   
   // base-sepolia
   if (pathname.startsWith('/api/base-sepolia/')) {
-    return paymentMiddleware(
+    const response = await paymentMiddleware(
       // payTo
       payToEVM,
       // routes
@@ -175,87 +229,95 @@ export function middleware(request: NextRequest) {
         url: facilitatorUrl,
       }
     )(request);
+    return withCors(request, response);
   }
   
   // avalanche mainnet
   if (pathname.startsWith('/api/avalanche/')) {
-    return paymentMiddleware(
+    const response = await paymentMiddleware(
       payToEVM,
       { '/api/avalanche/paid-content': avalancheConfig },
       {
         url: facilitatorUrl,
       }
     )(request);
+    return withCors(request, response);
   }
 
   // avalanche-fuji (testnet)
   if (pathname.startsWith('/api/avalanche-fuji/')) {
-    return paymentMiddleware(
+    const response = await paymentMiddleware(
       payToEVM,
       { '/api/avalanche-fuji/paid-content': avalancheFujiConfig },
       {
         url: facilitatorUrl,
       }
     )(request);
+    return withCors(request, response);
   }
 
   // polygon mainnet
   if (pathname.startsWith('/api/polygon/')) {
-    return paymentMiddleware(
+    const response = await paymentMiddleware(
       payToEVM,
       { '/api/polygon/paid-content': polygonConfig },
       {
         url: facilitatorUrl,
       }
     )(request);
+    return withCors(request, response);
   }
 
   // polygon-amoy (testnet)
   if (pathname.startsWith('/api/polygon-amoy/')) {
-    return paymentMiddleware(
+    const response = await paymentMiddleware(
       payToEVM,
       { '/api/polygon-amoy/paid-content': polygonAmoyConfig },
       {
         url: facilitatorUrl,
       }
     )(request);
+    return withCors(request, response);
   }
 
   // peaq mainnet
   if (pathname.startsWith('/api/peaq/')) {
-    return paymentMiddleware(
+    const response = await paymentMiddleware(
       payToEVM,
       { '/api/peaq/paid-content': peaqConfig },
       {
         url: facilitatorUrl,
       }
     )(request);
+    return withCors(request, response);
   }
 
   // sei mainnet
   if (pathname.startsWith('/api/sei/')) {
-    return paymentMiddleware(
+    const response = await paymentMiddleware(
       payToEVM,
       { '/api/sei/paid-content': seiConfig },
       {
         url: facilitatorUrl,
       }
     )(request);
+    return withCors(request, response);
   }
 
   // sei-testnet
   if (pathname.startsWith('/api/sei-testnet/')) {
-    return paymentMiddleware(
+    const response = await paymentMiddleware(
       payToEVM,
       { '/api/sei-testnet/paid-content': seiTestnetConfig },
       {
         url: facilitatorUrl,
       }
     )(request);
+    return withCors(request, response);
   }
   
   // if not matched, continue without payment enforcement
-  return NextResponse.next();
+  return withCors(request, NextResponse.next());
 }
 
 
@@ -667,16 +729,7 @@ export function paymentMiddleware(
 
 export const config = {
   matcher: [
-    '/api/solana-devnet/paid-content/:path*',
-    '/api/solana/paid-content/:path*',
-    '/api/base/paid-content/:path*',
-    '/api/base-sepolia/paid-content/:path*',
-    '/api/avalanche/paid-content/:path*',
-    '/api/avalanche-fuji/paid-content/:path*',
-    '/api/polygon/paid-content/:path*',
-    '/api/polygon-amoy/paid-content/:path*',
-    '/api/sei/paid-content/:path*',
-    '/api/sei-testnet/paid-content/:path*',
-    '/api/peaq/paid-content/:path*',
+    // Run on all API routes to ensure consistent CORS handling
+    '/api/:path*'
   ]
 };

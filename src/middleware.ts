@@ -188,7 +188,7 @@ async function getRequestedAmount(request: NextRequest, defaultAmount: string): 
     if (body.amount && typeof body.amount === 'number' && body.amount > 0) {
       return `$${body.amount.toFixed(2)}`;
     }
-  } catch (e) {
+  } catch {
     // If body is not JSON or amount is invalid, use default
   }
   

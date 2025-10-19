@@ -173,6 +173,28 @@ function withCors(request: NextRequest, response: NextResponse) {
   return response;
 }
 
+/**
+ * Extract amount from request body, falling back to default if not provided
+ * @param request - The incoming request
+ * @param defaultAmount - Default amount to use (e.g., '$0.01')
+ * @returns The amount to use for payment
+ */
+async function getRequestedAmount(request: NextRequest, defaultAmount: string): Promise<string> {
+  try {
+    // Clone the request to read the body without consuming it
+    const clonedRequest = request.clone();
+    const body = await clonedRequest.json();
+    
+    if (body.amount && typeof body.amount === 'number' && body.amount > 0) {
+      return `$${body.amount.toFixed(2)}`;
+    }
+  } catch (e) {
+    // If body is not JSON or amount is invalid, use default
+  }
+  
+  return defaultAmount;
+}
+
 export async function middleware(request: NextRequest) {
   // Handle CORS preflight
   if (request.method.toUpperCase() === "OPTIONS") {
@@ -183,9 +205,11 @@ export async function middleware(request: NextRequest) {
 
   // solana devnet
   if (pathname.startsWith('/api/solana-devnet/')) {
+    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const dynamicConfig = { ...solanaDevnetConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToSVM,
-      { '/api/solana-devnet/paid-content': solanaDevnetConfig },
+      { '/api/solana-devnet/paid-content': dynamicConfig },
       { url: facilitatorUrl }
     )(request);
     return withCors(request, response);
@@ -193,9 +217,11 @@ export async function middleware(request: NextRequest) {
 
   // solana mainnet
   if (pathname.startsWith('/api/solana/')) {
+    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const dynamicConfig = { ...solanaConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToSVM,
-      { '/api/solana/paid-content': solanaConfig },
+      { '/api/solana/paid-content': dynamicConfig },
       { url: facilitatorUrl }
     )(request);
     return withCors(request, response);
@@ -203,12 +229,14 @@ export async function middleware(request: NextRequest) {
 
   // base mainnet
   if (pathname.startsWith('/api/base/')) {
+    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const dynamicConfig = { ...baseConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       // payTo
       payToEVM,
       // routes
       {
-        '/api/base/paid-content': baseConfig
+        '/api/base/paid-content': dynamicConfig
       },
       {
         url: facilitatorUrl,
@@ -219,11 +247,13 @@ export async function middleware(request: NextRequest) {
   
   // base-sepolia
   if (pathname.startsWith('/api/base-sepolia/')) {
+    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const dynamicConfig = { ...sepoliaConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       // payTo
       payToEVM,
       // routes
-      { '/api/base-sepolia/paid-content': sepoliaConfig },
+      { '/api/base-sepolia/paid-content': dynamicConfig },
       // facilitator
       {
         url: facilitatorUrl,
@@ -234,9 +264,11 @@ export async function middleware(request: NextRequest) {
   
   // avalanche mainnet
   if (pathname.startsWith('/api/avalanche/')) {
+    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const dynamicConfig = { ...avalancheConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/avalanche/paid-content': avalancheConfig },
+      { '/api/avalanche/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }
@@ -246,9 +278,11 @@ export async function middleware(request: NextRequest) {
 
   // avalanche-fuji (testnet)
   if (pathname.startsWith('/api/avalanche-fuji/')) {
+    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const dynamicConfig = { ...avalancheFujiConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/avalanche-fuji/paid-content': avalancheFujiConfig },
+      { '/api/avalanche-fuji/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }
@@ -258,9 +292,11 @@ export async function middleware(request: NextRequest) {
 
   // polygon mainnet
   if (pathname.startsWith('/api/polygon/')) {
+    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const dynamicConfig = { ...polygonConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/polygon/paid-content': polygonConfig },
+      { '/api/polygon/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }
@@ -270,9 +306,11 @@ export async function middleware(request: NextRequest) {
 
   // polygon-amoy (testnet)
   if (pathname.startsWith('/api/polygon-amoy/')) {
+    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const dynamicConfig = { ...polygonAmoyConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/polygon-amoy/paid-content': polygonAmoyConfig },
+      { '/api/polygon-amoy/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }
@@ -282,9 +320,11 @@ export async function middleware(request: NextRequest) {
 
   // peaq mainnet
   if (pathname.startsWith('/api/peaq/')) {
+    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const dynamicConfig = { ...peaqConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/peaq/paid-content': peaqConfig },
+      { '/api/peaq/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }
@@ -294,9 +334,11 @@ export async function middleware(request: NextRequest) {
 
   // sei mainnet
   if (pathname.startsWith('/api/sei/')) {
+    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const dynamicConfig = { ...seiConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/sei/paid-content': seiConfig },
+      { '/api/sei/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }
@@ -306,9 +348,11 @@ export async function middleware(request: NextRequest) {
 
   // sei-testnet
   if (pathname.startsWith('/api/sei-testnet/')) {
+    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const dynamicConfig = { ...seiTestnetConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/sei-testnet/paid-content': seiTestnetConfig },
+      { '/api/sei-testnet/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }

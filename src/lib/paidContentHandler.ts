@@ -47,9 +47,20 @@ export async function handlePaidContentRequest(request: NextRequest, defaultNetw
 
   const acceptHeader = request.headers.get('accept') || '';
   const userAgent = request.headers.get('user-agent') || '';
+  const wantsJson = acceptHeader.includes('application/json');
   const wantsHtml = acceptHeader.includes('text/html');
   const isBrowserUa = /(Mozilla|Chrome|Safari|Firefox|Edge|OPR|Edg)/i.test(userAgent) && !/(curl|wget|httpie|Postman|Insomnia|Go-http-client|node|node-fetch)/i.test(userAgent);
 
+  // If explicitly wants JSON (like fetch requests), return JSON even if it's a browser
+  if (wantsJson && !wantsHtml) {
+    // Return JSON for API/fetch requests
+    if (refundTxHash === undefined) {
+      paymentInfo.refundFailed = true;
+    }
+    return NextResponse.json(paymentInfo);
+  }
+
+  // Otherwise, return HTML for regular browser navigation
   if (wantsHtml || isBrowserUa) {
     const html = renderRizzlerHtml({
       transaction: paymentInfo.transaction || 'N/A',

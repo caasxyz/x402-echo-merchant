@@ -181,24 +181,47 @@ function withCors(request: NextRequest, response: NextResponse) {
  * @returns The amount to use for payment
  */
 async function getRequestedAmount(request: NextRequest, defaultAmount: Price): Promise<string> {
+  // Check if request has a body first
+  const contentLength = request.headers.get('content-length');
+  const contentType = request.headers.get('content-type');
+  
+  // No body or not JSON content type - use default
+  if (!contentLength || contentLength === '0' || !contentType?.includes('application/json')) {
+    return convertPriceToString(defaultAmount);
+  }
+  
   try {
     // Clone the request to read the body without consuming it
     const clonedRequest = request.clone();
     const body = await clonedRequest.json();
     
+    // Check if amount exists and is a valid positive number
     if (body.amount && typeof body.amount === 'number' && body.amount > 0) {
       return `$${body.amount.toFixed(2)}`;
     }
-  } catch {
-    // If body is not JSON or amount is invalid, use default
+    
+    // Body exists but no valid amount - use default
+    return convertPriceToString(defaultAmount);
+  } catch (error) {
+    // Only catch JSON parsing errors, let other errors bubble up
+    if (error instanceof SyntaxError) {
+      return convertPriceToString(defaultAmount);
+    }
+    throw error;
   }
-  
-  // Convert Price to string
-  if (typeof defaultAmount === 'string') {
-    return defaultAmount;
+}
+
+/**
+ * Convert Price to string format
+ * @param price - The price to convert
+ * @returns The price as a string
+ */
+function convertPriceToString(price: Price): string {
+  if (typeof price === 'string') {
+    return price;
   }
-  if (typeof defaultAmount === 'number') {
-    return `$${defaultAmount.toFixed(2)}`;
+  if (typeof price === 'number') {
+    return `$${price.toFixed(2)}`;
   }
   // For complex token amounts, we'll use a fallback
   return '$0.01';

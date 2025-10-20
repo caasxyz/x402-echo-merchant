@@ -51,12 +51,13 @@ export async function handlePaidContentRequest(request: NextRequest, defaultNetw
   const wantsHtml = acceptHeader.includes('text/html');
   const isBrowserUa = /(Mozilla|Chrome|Safari|Firefox|Edge|OPR|Edg)/i.test(userAgent) && !/(curl|wget|httpie|Postman|Insomnia|Go-http-client|node|node-fetch)/i.test(userAgent);
 
+  // Set refund status if refund failed
+  if (refundTxHash === undefined) {
+    paymentInfo.refundFailed = true;
+  }
+
   // If explicitly wants JSON (like fetch requests), return JSON even if it's a browser
   if (wantsJson && !wantsHtml) {
-    // Return JSON for API/fetch requests
-    if (refundTxHash === undefined) {
-      paymentInfo.refundFailed = true;
-    }
     return NextResponse.json(paymentInfo);
   }
 
@@ -73,11 +74,7 @@ export async function handlePaidContentRequest(request: NextRequest, defaultNetw
     });
   }
 
-  // Provide explicit refund status for non-browser clients
-  if (refundTxHash === undefined) {
-    paymentInfo.refundFailed = true;
-  }
-
+  // Default to JSON for other clients
   return NextResponse.json(paymentInfo);
 }
 

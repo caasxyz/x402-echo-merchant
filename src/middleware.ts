@@ -17,6 +17,7 @@ import {
   ExactSvmPayload,
   PaymentPayload,
   PaymentRequirements,
+  Price,
   Resource,
   RouteConfig,
   RoutesConfig,
@@ -38,7 +39,7 @@ const payToEVM = process.env.EVM_RECEIVE_PAYMENTS_ADDRESS as `0x${string}`;
 const payToSVM = process.env.SVM_RECEIVE_PAYMENTS_ADDRESS as SolanaAddress;
 
 const solanaDevnetConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'solana-devnet' as Network,
   config: {
     description: 'Access to protected content on solana devnet'
@@ -46,7 +47,7 @@ const solanaDevnetConfig = {
 } as RouteConfig;
 
 const solanaConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'solana' as Network,
   config: {
     description: 'Access to protected content on solana mainnet'
@@ -54,7 +55,7 @@ const solanaConfig = {
 } as RouteConfig;
 
 const baseConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: "base" as Network,
   config: {
     description: 'Access to protected content on base mainnet'
@@ -62,7 +63,7 @@ const baseConfig = {
 } as RouteConfig;
 
 const sepoliaConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'base-sepolia' as Network,
   config: {
     description: 'Access to protected content on base-sepolia'
@@ -70,7 +71,7 @@ const sepoliaConfig = {
 } as RouteConfig;
 
 const avalancheConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'avalanche' as Network,
   config: {
     description: 'Access to protected content on avalanche mainnet'
@@ -78,7 +79,7 @@ const avalancheConfig = {
 } as RouteConfig;
 
 const avalancheFujiConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'avalanche-fuji' as Network,
   config: {
     description: 'Access to protected content on avalanche-fuji'
@@ -86,7 +87,7 @@ const avalancheFujiConfig = {
 } as RouteConfig;
 
 const seiConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'sei' as Network,
   config: {
     description: 'Access to protected content on sei mainnet'
@@ -94,7 +95,7 @@ const seiConfig = {
 } as RouteConfig;
 
 const seiTestnetConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'sei-testnet' as Network,
   config: {
     description: 'Access to protected content on sei-testnet'
@@ -102,7 +103,7 @@ const seiTestnetConfig = {
 } as RouteConfig;
 
 const polygonConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'polygon' as Network,
   config: {
     description: 'Access to protected content on polygon mainnet'
@@ -110,7 +111,7 @@ const polygonConfig = {
 } as RouteConfig;
 
 const polygonAmoyConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'polygon-amoy' as Network,
   config: {
     description: 'Access to protected content on polygon amoy testnet'
@@ -118,7 +119,7 @@ const polygonAmoyConfig = {
 } as RouteConfig;
 
 const peaqConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'peaq' as Network,
   config: {
     description: 'Access to protected content on peaq mainnet'
@@ -179,7 +180,7 @@ function withCors(request: NextRequest, response: NextResponse) {
  * @param defaultAmount - Default amount to use (e.g., '$0.01')
  * @returns The amount to use for payment
  */
-async function getRequestedAmount(request: NextRequest, defaultAmount: string): Promise<string> {
+async function getRequestedAmount(request: NextRequest, defaultAmount: Price): Promise<string> {
   try {
     // Clone the request to read the body without consuming it
     const clonedRequest = request.clone();
@@ -192,7 +193,15 @@ async function getRequestedAmount(request: NextRequest, defaultAmount: string): 
     // If body is not JSON or amount is invalid, use default
   }
   
-  return defaultAmount;
+  // Convert Price to string
+  if (typeof defaultAmount === 'string') {
+    return defaultAmount;
+  }
+  if (typeof defaultAmount === 'number') {
+    return `$${defaultAmount.toFixed(2)}`;
+  }
+  // For complex token amounts, we'll use a fallback
+  return '$0.01';
 }
 
 export async function middleware(request: NextRequest) {

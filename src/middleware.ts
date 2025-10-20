@@ -205,7 +205,7 @@ export async function middleware(request: NextRequest) {
 
   // solana devnet
   if (pathname.startsWith('/api/solana-devnet/')) {
-    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const requestedAmount = await getRequestedAmount(request, solanaDevnetConfig.price);
     const dynamicConfig = { ...solanaDevnetConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToSVM,
@@ -217,7 +217,7 @@ export async function middleware(request: NextRequest) {
 
   // solana mainnet
   if (pathname.startsWith('/api/solana/')) {
-    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const requestedAmount = await getRequestedAmount(request, solanaConfig.price);
     const dynamicConfig = { ...solanaConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToSVM,
@@ -229,7 +229,7 @@ export async function middleware(request: NextRequest) {
 
   // base mainnet
   if (pathname.startsWith('/api/base/')) {
-    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const requestedAmount = await getRequestedAmount(request, baseConfig.price);
     const dynamicConfig = { ...baseConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       // payTo
@@ -247,7 +247,7 @@ export async function middleware(request: NextRequest) {
   
   // base-sepolia
   if (pathname.startsWith('/api/base-sepolia/')) {
-    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const requestedAmount = await getRequestedAmount(request, sepoliaConfig.price);
     const dynamicConfig = { ...sepoliaConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       // payTo
@@ -264,7 +264,7 @@ export async function middleware(request: NextRequest) {
   
   // avalanche mainnet
   if (pathname.startsWith('/api/avalanche/')) {
-    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const requestedAmount = await getRequestedAmount(request, avalancheConfig.price);
     const dynamicConfig = { ...avalancheConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
@@ -278,7 +278,7 @@ export async function middleware(request: NextRequest) {
 
   // avalanche-fuji (testnet)
   if (pathname.startsWith('/api/avalanche-fuji/')) {
-    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const requestedAmount = await getRequestedAmount(request, avalancheFujiConfig.price);
     const dynamicConfig = { ...avalancheFujiConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
@@ -292,7 +292,7 @@ export async function middleware(request: NextRequest) {
 
   // polygon mainnet
   if (pathname.startsWith('/api/polygon/')) {
-    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const requestedAmount = await getRequestedAmount(request, polygonConfig.price);
     const dynamicConfig = { ...polygonConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
@@ -306,7 +306,7 @@ export async function middleware(request: NextRequest) {
 
   // polygon-amoy (testnet)
   if (pathname.startsWith('/api/polygon-amoy/')) {
-    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const requestedAmount = await getRequestedAmount(request, polygonAmoyConfig.price);
     const dynamicConfig = { ...polygonAmoyConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
@@ -320,7 +320,7 @@ export async function middleware(request: NextRequest) {
 
   // peaq mainnet
   if (pathname.startsWith('/api/peaq/')) {
-    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const requestedAmount = await getRequestedAmount(request, peaqConfig.price);
     const dynamicConfig = { ...peaqConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
@@ -334,7 +334,7 @@ export async function middleware(request: NextRequest) {
 
   // sei mainnet
   if (pathname.startsWith('/api/sei/')) {
-    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const requestedAmount = await getRequestedAmount(request, seiConfig.price);
     const dynamicConfig = { ...seiConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
@@ -348,7 +348,7 @@ export async function middleware(request: NextRequest) {
 
   // sei-testnet
   if (pathname.startsWith('/api/sei-testnet/')) {
-    const requestedAmount = await getRequestedAmount(request, '$0.01');
+    const requestedAmount = await getRequestedAmount(request, seiTestnetConfig.price);
     const dynamicConfig = { ...seiTestnetConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,

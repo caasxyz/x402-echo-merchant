@@ -17,6 +17,7 @@ import {
   ExactSvmPayload,
   PaymentPayload,
   PaymentRequirements,
+  Price,
   Resource,
   RouteConfig,
   RoutesConfig,
@@ -38,7 +39,7 @@ const payToEVM = process.env.EVM_RECEIVE_PAYMENTS_ADDRESS as `0x${string}`;
 const payToSVM = process.env.SVM_RECEIVE_PAYMENTS_ADDRESS as SolanaAddress;
 
 const solanaDevnetConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'solana-devnet' as Network,
   config: {
     description: 'Access to protected content on solana devnet'
@@ -46,7 +47,7 @@ const solanaDevnetConfig = {
 } as RouteConfig;
 
 const solanaConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'solana' as Network,
   config: {
     description: 'Access to protected content on solana mainnet'
@@ -54,7 +55,7 @@ const solanaConfig = {
 } as RouteConfig;
 
 const baseConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: "base" as Network,
   config: {
     description: 'Access to protected content on base mainnet'
@@ -62,7 +63,7 @@ const baseConfig = {
 } as RouteConfig;
 
 const sepoliaConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'base-sepolia' as Network,
   config: {
     description: 'Access to protected content on base-sepolia'
@@ -70,7 +71,7 @@ const sepoliaConfig = {
 } as RouteConfig;
 
 const avalancheConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'avalanche' as Network,
   config: {
     description: 'Access to protected content on avalanche mainnet'
@@ -78,7 +79,7 @@ const avalancheConfig = {
 } as RouteConfig;
 
 const avalancheFujiConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'avalanche-fuji' as Network,
   config: {
     description: 'Access to protected content on avalanche-fuji'
@@ -86,7 +87,7 @@ const avalancheFujiConfig = {
 } as RouteConfig;
 
 const seiConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'sei' as Network,
   config: {
     description: 'Access to protected content on sei mainnet'
@@ -94,7 +95,7 @@ const seiConfig = {
 } as RouteConfig;
 
 const seiTestnetConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'sei-testnet' as Network,
   config: {
     description: 'Access to protected content on sei-testnet'
@@ -102,7 +103,7 @@ const seiTestnetConfig = {
 } as RouteConfig;
 
 const polygonConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'polygon' as Network,
   config: {
     description: 'Access to protected content on polygon mainnet'
@@ -110,7 +111,7 @@ const polygonConfig = {
 } as RouteConfig;
 
 const polygonAmoyConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'polygon-amoy' as Network,
   config: {
     description: 'Access to protected content on polygon amoy testnet'
@@ -118,7 +119,7 @@ const polygonAmoyConfig = {
 } as RouteConfig;
 
 const peaqConfig = {
-  price: '$0.01',
+  price: '$0.01' as Price,
   network: 'peaq' as Network,
   config: {
     description: 'Access to protected content on peaq mainnet'
@@ -173,6 +174,59 @@ function withCors(request: NextRequest, response: NextResponse) {
   return response;
 }
 
+/**
+ * Extract amount from request body, falling back to default if not provided
+ * @param request - The incoming request
+ * @param defaultAmount - Default amount to use (e.g., '$0.01')
+ * @returns The amount to use for payment
+ */
+async function getRequestedAmount(request: NextRequest, defaultAmount: Price): Promise<string> {
+  // Check if request has a body first
+  const contentLength = request.headers.get('content-length');
+  const contentType = request.headers.get('content-type');
+  
+  // No body or not JSON content type - use default
+  if (!contentLength || contentLength === '0' || !contentType?.includes('application/json')) {
+    return convertPriceToString(defaultAmount);
+  }
+  
+  try {
+    // Clone the request to read the body without consuming it
+    const clonedRequest = request.clone();
+    const body = await clonedRequest.json();
+    
+    // Check if amount exists and is a valid positive number
+    if (body.amount && typeof body.amount === 'number' && body.amount > 0) {
+      return `$${body.amount.toFixed(2)}`;
+    }
+    
+    // Body exists but no valid amount - use default
+    return convertPriceToString(defaultAmount);
+  } catch (error) {
+    // Only catch JSON parsing errors, let other errors bubble up
+    if (error instanceof SyntaxError) {
+      return convertPriceToString(defaultAmount);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Convert Price to string format
+ * @param price - The price to convert
+ * @returns The price as a string
+ */
+function convertPriceToString(price: Price): string {
+  if (typeof price === 'string') {
+    return price;
+  }
+  if (typeof price === 'number') {
+    return `$${price.toFixed(2)}`;
+  }
+  // For complex token amounts, we'll use a fallback
+  return '$0.01';
+}
+
 export async function middleware(request: NextRequest) {
   // Handle CORS preflight
   if (request.method.toUpperCase() === "OPTIONS") {
@@ -183,9 +237,11 @@ export async function middleware(request: NextRequest) {
 
   // solana devnet
   if (pathname.startsWith('/api/solana-devnet/')) {
+    const requestedAmount = await getRequestedAmount(request, solanaDevnetConfig.price);
+    const dynamicConfig = { ...solanaDevnetConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToSVM,
-      { '/api/solana-devnet/paid-content': solanaDevnetConfig },
+      { '/api/solana-devnet/paid-content': dynamicConfig },
       { url: facilitatorUrl }
     )(request);
     return withCors(request, response);
@@ -193,9 +249,11 @@ export async function middleware(request: NextRequest) {
 
   // solana mainnet
   if (pathname.startsWith('/api/solana/')) {
+    const requestedAmount = await getRequestedAmount(request, solanaConfig.price);
+    const dynamicConfig = { ...solanaConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToSVM,
-      { '/api/solana/paid-content': solanaConfig },
+      { '/api/solana/paid-content': dynamicConfig },
       { url: facilitatorUrl }
     )(request);
     return withCors(request, response);
@@ -203,12 +261,14 @@ export async function middleware(request: NextRequest) {
 
   // base mainnet
   if (pathname.startsWith('/api/base/')) {
+    const requestedAmount = await getRequestedAmount(request, baseConfig.price);
+    const dynamicConfig = { ...baseConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       // payTo
       payToEVM,
       // routes
       {
-        '/api/base/paid-content': baseConfig
+        '/api/base/paid-content': dynamicConfig
       },
       {
         url: facilitatorUrl,
@@ -219,11 +279,13 @@ export async function middleware(request: NextRequest) {
   
   // base-sepolia
   if (pathname.startsWith('/api/base-sepolia/')) {
+    const requestedAmount = await getRequestedAmount(request, sepoliaConfig.price);
+    const dynamicConfig = { ...sepoliaConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       // payTo
       payToEVM,
       // routes
-      { '/api/base-sepolia/paid-content': sepoliaConfig },
+      { '/api/base-sepolia/paid-content': dynamicConfig },
       // facilitator
       {
         url: facilitatorUrl,
@@ -234,9 +296,11 @@ export async function middleware(request: NextRequest) {
   
   // avalanche mainnet
   if (pathname.startsWith('/api/avalanche/')) {
+    const requestedAmount = await getRequestedAmount(request, avalancheConfig.price);
+    const dynamicConfig = { ...avalancheConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/avalanche/paid-content': avalancheConfig },
+      { '/api/avalanche/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }
@@ -246,9 +310,11 @@ export async function middleware(request: NextRequest) {
 
   // avalanche-fuji (testnet)
   if (pathname.startsWith('/api/avalanche-fuji/')) {
+    const requestedAmount = await getRequestedAmount(request, avalancheFujiConfig.price);
+    const dynamicConfig = { ...avalancheFujiConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/avalanche-fuji/paid-content': avalancheFujiConfig },
+      { '/api/avalanche-fuji/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }
@@ -258,9 +324,11 @@ export async function middleware(request: NextRequest) {
 
   // polygon mainnet
   if (pathname.startsWith('/api/polygon/')) {
+    const requestedAmount = await getRequestedAmount(request, polygonConfig.price);
+    const dynamicConfig = { ...polygonConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/polygon/paid-content': polygonConfig },
+      { '/api/polygon/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }
@@ -270,9 +338,11 @@ export async function middleware(request: NextRequest) {
 
   // polygon-amoy (testnet)
   if (pathname.startsWith('/api/polygon-amoy/')) {
+    const requestedAmount = await getRequestedAmount(request, polygonAmoyConfig.price);
+    const dynamicConfig = { ...polygonAmoyConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/polygon-amoy/paid-content': polygonAmoyConfig },
+      { '/api/polygon-amoy/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }
@@ -282,9 +352,11 @@ export async function middleware(request: NextRequest) {
 
   // peaq mainnet
   if (pathname.startsWith('/api/peaq/')) {
+    const requestedAmount = await getRequestedAmount(request, peaqConfig.price);
+    const dynamicConfig = { ...peaqConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/peaq/paid-content': peaqConfig },
+      { '/api/peaq/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }
@@ -294,9 +366,11 @@ export async function middleware(request: NextRequest) {
 
   // sei mainnet
   if (pathname.startsWith('/api/sei/')) {
+    const requestedAmount = await getRequestedAmount(request, seiConfig.price);
+    const dynamicConfig = { ...seiConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/sei/paid-content': seiConfig },
+      { '/api/sei/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }
@@ -306,9 +380,11 @@ export async function middleware(request: NextRequest) {
 
   // sei-testnet
   if (pathname.startsWith('/api/sei-testnet/')) {
+    const requestedAmount = await getRequestedAmount(request, seiTestnetConfig.price);
+    const dynamicConfig = { ...seiTestnetConfig, price: requestedAmount };
     const response = await paymentMiddleware(
       payToEVM,
-      { '/api/sei-testnet/paid-content': seiTestnetConfig },
+      { '/api/sei-testnet/paid-content': dynamicConfig },
       {
         url: facilitatorUrl,
       }

@@ -107,7 +107,14 @@ const polygonConfig = {
   network: 'polygon' as Network,
   config: {
     description: 'Access to protected content on polygon mainnet'
+  }const xlayerConfig = {
+price: '$0.01' as Price,
+  network: 'xlayer' as Network,
+  config: {
+    description: 'Access to protected content on xlayer mainnet'
   }
+} as RouteConfig;
+
 } as RouteConfig;
 
 const polygonAmoyConfig = {
@@ -294,7 +301,23 @@ export async function middleware(request: NextRequest) {
     return withCors(request, response);
   }
   
-  // avalanche mainnet
+   // --- XLayer network support ---
+  const xlayerConfig = {
+    price: '$0.01',
+    network: 'xlayer',
+    config: {
+      description: 'XLayer pay-per-use demo'
+    }
+  };
+
+  if (pathname.startsWith('/api/xlayer/')) {
+    return paymentMiddleware(
+      payToEVM,
+      { '/api/xlayer/paid-content': xlayerConfig },
+      { url: facilitatorUrl },
+    )(request);
+  }
+// avalanche mainnet
   if (pathname.startsWith('/api/avalanche/')) {
     const requestedAmount = await getRequestedAmount(request, avalancheConfig.price);
     const dynamicConfig = { ...avalancheConfig, price: requestedAmount };
